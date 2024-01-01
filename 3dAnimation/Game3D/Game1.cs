@@ -29,6 +29,9 @@ namespace Game3D
         Matrix view = Matrix.CreateLookAt(new Vector3(0, 0, 3), new Vector3(0, 0, 0), new Vector3(0, 1, 0));
         Matrix projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(45), SCREENWIDTH / SCREENHEIGHT, 0.01f, 100f);
 
+        Vector3 lightPosition = new Vector3(2, 2, 2);
+        Vector3 lightRealPosition = new Vector3(0, 0, 0);
+
         UmbrellaToolsKit.Animation3D.Mesh mesh;
 
         public Game1()
@@ -117,11 +120,13 @@ namespace Game3D
             angle += 0.5f;
             if (angle > 360.0f)
                 angle -= 360.0f;
-            var worldEffect = Matrix.CreateRotationY(MathHelper.ToRadians(angle)) * world;
 
-            basicEffect.Parameters["World"].SetValue(worldEffect);
+            lightPosition = lightRealPosition + (Vector3.UnitX + Vector3.UnitZ) * MathF.Cos((float)gameTime.TotalGameTime.TotalMilliseconds * 0.005f) * 10f;
+
+            basicEffect.Parameters["World"].SetValue(world * Matrix.CreateRotationY(MathHelper.ToRadians(angle)));
             basicEffect.Parameters["View"].SetValue(view);
             basicEffect.Parameters["Projection"].SetValue(projection);
+            basicEffect.Parameters["lightPosition"].SetValue(lightPosition);
 
             GraphicsDevice.SetVertexBuffer(vertexBuffer);
             GraphicsDevice.Indices = indexBuffer;
@@ -135,6 +140,20 @@ namespace Game3D
                 pass.Apply();
                 GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, mesh.Vertices.Length, 0, mesh.Indices.Length / 3);
             }
+
+            basicEffect.Parameters["World"].SetValue(Matrix.CreateTranslation(lightPosition) * Matrix.CreateScale(Vector3.One * 0.15f));
+            basicEffect.Parameters["View"].SetValue(view);
+            basicEffect.Parameters["Projection"].SetValue(projection);
+
+            GraphicsDevice.SetVertexBuffer(vertexBuffer);
+            GraphicsDevice.Indices = indexBuffer;
+
+            foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
+            {
+                pass.Apply();
+                GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.LineList, 0, 0, mesh.Vertices.Length, 0, mesh.Indices.Length / 3);
+            }
+
 
             base.Draw(gameTime);
         }
