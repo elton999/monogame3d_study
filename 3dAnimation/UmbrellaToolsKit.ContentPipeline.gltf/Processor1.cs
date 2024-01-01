@@ -22,6 +22,7 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
         {
             var meshR = new Animation3D.Mesh();
             var vertices = new List<Vector3>();
+            var normals = new List<Vector3>();
             var indices = new List<short>();
             
             for(int i = 0; i < gltf.Meshes.Length; i++)
@@ -54,9 +55,24 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
                             vertices.Add(new Vector3(x, y, z));
                         }
                     }
-                    
+
+                    // Normals
+                    if (attributes[i].Attributes["NORMAL"] == j && accessor.Type == glTFLoader.Schema.Accessor.TypeEnum.VEC3)
+                    {
+                        for (int n = bufferView.ByteOffset; n < bufferView.ByteOffset + bufferView.ByteLength; n += 4)
+                        {
+                            float x = BitConverter.ToSingle(uriBytes, n);
+                            n += 4;
+                            float y = BitConverter.ToSingle(uriBytes, n);
+                            n += 4;
+                            float z = BitConverter.ToSingle(uriBytes, n);
+
+                            normals.Add(new Vector3(x, y, z));
+                        }
+                    }
+
                     // Indicies
-                    if(accessor.ComponentType == glTFLoader.Schema.Accessor.ComponentTypeEnum.UNSIGNED_SHORT)
+                    if (accessor.ComponentType == glTFLoader.Schema.Accessor.ComponentTypeEnum.UNSIGNED_SHORT)
                     {
                         for (int n = bufferView.ByteOffset; n < bufferView.ByteOffset + bufferView.ByteLength; n += 2)
                         {
@@ -64,10 +80,10 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
                             indices.Add((short)TriangleItem);
                         }
                     }
-                    
                 }
             }
             meshR.Vertices = vertices.ToArray();
+            meshR.Normals = normals.ToArray();
             meshR.Indices = indices.ToArray();
             return meshR;
         }
