@@ -31,17 +31,14 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
 
                 for (int j = 0; j < accessorLenght; j++)
                 {
-                    string meshPrimitive = "";
-                    if (attributes.Length > j)
-                        meshPrimitive = attributes[j].Mode.ToString();
-
                     var accessor = gltf.Accessors[j];
+                   
                     int bufferIndex = accessor.BufferView.Value;
                     var bufferView = gltf.BufferViews[bufferIndex];
                     byte[] uriBytes = Convert.FromBase64String(gltf.Buffers[bufferView.Buffer].Uri.Replace("data:application/octet-stream;base64,", ""));
 
                     // vertices
-                    if (meshPrimitive == "TRIANGLES")
+                    if (attributes[i].Attributes["POSITION"] == j && accessor.Type == glTFLoader.Schema.Accessor.TypeEnum.VEC3)
                     {
                         float[] ScalingFactorForVariables = new float[3];
                         ScalingFactorForVariables = new float[3] { 1.0f, 1.0f, 1.0f };
