@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content.Pipeline;
 
 using TInput = glTFLoader.Schema.Gltf;
@@ -19,12 +21,12 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
         public Animation3D.Mesh LoadMesh(glTFLoader.Schema.Gltf gltf)
         {
             var meshR = new Animation3D.Mesh();
+            var vertices = new List<Vector3>();
+            var indices = new List<short>();
             
             for(int i = 0; i < gltf.Meshes.Length; i++)
             {
-
                 var attributes = gltf.Meshes[i].Primitives;
-
                 int accessorLenght = gltf.Accessors.Length;
 
                 for (int j = 0; j < accessorLenght; j++)
@@ -52,7 +54,7 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
                             n += 4;
                             float z = BitConverter.ToSingle(uriBytes, n) / ScalingFactorForVariables[2];
 
-                            meshR.Vertices.Add(new Microsoft.Xna.Framework.Vector3(x, y, z));
+                            vertices.Add(new Vector3(x, y, z));
                         }
                     }
                     
@@ -62,13 +64,14 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
                         for (int n = bufferView.ByteOffset; n < bufferView.ByteOffset + bufferView.ByteLength; n += 2)
                         {
                             UInt16 TriangleItem = BitConverter.ToUInt16(uriBytes, n);
-                            meshR.Indices.Add((int)TriangleItem);
+                            indices.Add((short)TriangleItem);
                         }
                     }
                     
                 }
             }
-            
+            meshR.Vertices = vertices.ToArray();
+            meshR.Indices = indices.ToArray();
             return meshR;
         }
 

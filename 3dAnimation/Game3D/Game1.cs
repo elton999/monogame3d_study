@@ -72,24 +72,18 @@ namespace Game3D
 
             basicEffect = new BasicEffect(GraphicsDevice);
 
-            VertexPositionColor[] vertices = new VertexPositionColor[mesh.Vertices.Count];
-            for(int i = 0; i < mesh.Vertices.Count; i++)
+            VertexPositionColor[] vertices = new VertexPositionColor[mesh.Vertices.Length];
+            for(int i = 0; i < mesh.Vertices.Length; i++)
             {
                 vertices[i] = new VertexPositionColor(mesh.Vertices[i], Color.Gray);
             }
-            System.Console.WriteLine(mesh.Vertices.Count);
+            System.Console.WriteLine(mesh.Vertices.Length);
 
-            short[] indices = new short[mesh.Indices.Count];
-            for(int i = 0; i < indices.Length; i++)
-            {
-                indices[i] = (short)mesh.Indices[i];
-            }
-
-            vertexBuffer = new VertexBuffer(GraphicsDevice, typeof(VertexPositionColor), mesh.Vertices.Count, BufferUsage.WriteOnly);
+            vertexBuffer = new VertexBuffer(GraphicsDevice, typeof(VertexPositionColor), mesh.Vertices.Length, BufferUsage.WriteOnly);
             vertexBuffer.SetData<VertexPositionColor>(vertices);
 
-            indexBuffer = new IndexBuffer(GraphicsDevice, typeof(short), indices.Length, BufferUsage.WriteOnly);
-            indexBuffer.SetData(indices);
+            indexBuffer = new IndexBuffer(GraphicsDevice, typeof(short), mesh.Indices.Length, BufferUsage.WriteOnly);
+            indexBuffer.SetData(mesh.Indices);
         }
 
         bool init = true;
@@ -139,7 +133,7 @@ namespace Game3D
             foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
             {
                 pass.Apply();
-                GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, mesh.Vertices.Count, 0, mesh.Indices.Count / 3);
+                GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, mesh.Vertices.Length, 0, mesh.Indices.Length / 3);
             }
 
             base.Draw(gameTime);
