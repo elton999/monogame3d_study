@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.4.33205.214
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Game3D", "Game3D.csproj", "{25644501-65BA-40C9-8850-A8463727F0A5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UmbrellaToolsKit.Animation3D", "..\UmbrellaToolsKit.3D.Animation\UmbrellaToolsKit.Animation3D.csproj", "{D43BFA3B-AAD9-4081-B4B4-7C9D71831728}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UmbrellaToolsKit.ContentPipeline.gltf", "..\UmbrellaToolsKit.ContentPipeline.gltf\UmbrellaToolsKit.ContentPipeline.gltf.csproj", "{27311D91-4D4F-4581-88B3-39F48E16E8B9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{25644501-65BA-40C9-8850-A8463727F0A5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{25644501-65BA-40C9-8850-A8463727F0A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{25644501-65BA-40C9-8850-A8463727F0A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{25644501-65BA-40C9-8850-A8463727F0A5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D43BFA3B-AAD9-4081-B4B4-7C9D71831728}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D43BFA3B-AAD9-4081-B4B4-7C9D71831728}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D43BFA3B-AAD9-4081-B4B4-7C9D71831728}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D43BFA3B-AAD9-4081-B4B4-7C9D71831728}.Release|Any CPU.Build.0 = Release|Any CPU
+		{27311D91-4D4F-4581-88B3-39F48E16E8B9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{27311D91-4D4F-4581-88B3-39F48E16E8B9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{27311D91-4D4F-4581-88B3-39F48E16E8B9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{27311D91-4D4F-4581-88B3-39F48E16E8B9}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F4531A8B-181B-4B5F-B01C-47E51D9F822C}
+	EndGlobalSection
+EndGlobal
