@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using Microsoft.Xna.Framework.Content.Pipeline;
 
 using TInput = glTFLoader.Schema.Gltf;
@@ -13,41 +12,64 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
         public override TOutput Process(TInput input, ContentProcessorContext context)
         {
             ValidateFile(input);
-            Animation3D.Mesh mesh = LoadMesh(input);
+            var mesh = LoadMesh(input);
             return mesh;
         }
 
         public Animation3D.Mesh LoadMesh(glTFLoader.Schema.Gltf gltf)
         {
-            Animation3D.Mesh meshR = new Animation3D.Mesh();
-
+            var meshR = new Animation3D.Mesh();
             
-            byte[] uriBytes = Convert.FromBase64String(gltf.Buffers[0].Uri.Replace("data:application/octet-stream;base64,", ""));
-            var accessor = gltf.Accessors[0];
-            // vertices
-            for(int n = gltf.BufferViews[0].ByteOffset; n < gltf.BufferViews[0].ByteOffset + gltf.BufferViews[0].ByteLength; n+=4)
+            for(int i = 0; i < gltf.Meshes.Length; i++)
             {
-                float x = BitConverter.ToSingle(uriBytes, n);
-                n += 4;
-                float y = BitConverter.ToSingle(uriBytes, n);
-                n += 4;
-                float z = BitConverter.ToSingle(uriBytes, n);
 
-                meshR.Vertices.Add(new Microsoft.Xna.Framework.Vector3(x, y, z));
+                var attributes = gltf.Meshes[i].Primitives;
+
+                int accessorLenght = gltf.Accessors.Length;
+
+                for (int j = 0; j < accessorLenght; j++)
+                {
+                    string meshPrimitive = "";
+                    if (attributes.Length > j)
+                        meshPrimitive = attributes[j].Mode.ToString();
+
+                    var accessor = gltf.Accessors[j];
+                    int bufferIndex = accessor.BufferView.Value;
+                    var bufferView = gltf.BufferViews[bufferIndex];
+                    byte[] uriBytes = Convert.FromBase64String(gltf.Buffers[bufferView.Buffer].Uri.Replace("data:application/octet-stream;base64,", ""));
+
+                    // vertices
+                    if (meshPrimitive == "TRIANGLES")
+                    {
+                        float[] ScalingFactorForVariables = new float[3];
+                        ScalingFactorForVariables = new float[3] { 1.0f, 1.0f, 1.0f };
+
+                        for (int n = bufferView.ByteOffset; n < bufferView.ByteOffset + bufferView.ByteLength; n += 4)
+                        {
+                            float x = BitConverter.ToSingle(uriBytes, n) / ScalingFactorForVariables[0];
+                            n += 4;
+                            float y = BitConverter.ToSingle(uriBytes, n) / ScalingFactorForVariables[1];
+                            n += 4;
+                            float z = BitConverter.ToSingle(uriBytes, n) / ScalingFactorForVariables[2];
+
+                            meshR.Vertices.Add(new Microsoft.Xna.Framework.Vector3(x, y, z));
+                        }
+                    }
+                    
+                    // Indicies
+                    if(accessor.ComponentType == glTFLoader.Schema.Accessor.ComponentTypeEnum.UNSIGNED_SHORT)
+                    {
+                        for (int n = bufferView.ByteOffset; n < bufferView.ByteOffset + bufferView.ByteLength; n += 2)
+                        {
+                            UInt16 TriangleItem = BitConverter.ToUInt16(uriBytes, n);
+                            meshR.Indices.Add((int)TriangleItem);
+                        }
+                    }
+                    
+                }
             }
-
-            for(int n = gltf.BufferViews[3].ByteOffset; n < gltf.BufferViews[3].ByteOffset + gltf.BufferViews[3].ByteLength; n += 2)
-            {
-                UInt16 TriangleItem = BitConverter.ToUInt16(uriBytes, n);
-                meshR.Indices.Add((int)TriangleItem);
-            }
-
+            
             return meshR;
-        }
-
-        public static void MeshFromAttributes()
-        {
-
         }
 
         public static void ValidateFile(glTFLoader.Schema.Gltf gltf)
