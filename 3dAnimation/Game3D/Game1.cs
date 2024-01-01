@@ -23,7 +23,7 @@ namespace Game3D
 
         VertexBuffer vertexBuffer;
         IndexBuffer indexBuffer;
-        BasicEffect basicEffect;
+        Effect basicEffect;
 
         Matrix world = Matrix.CreateTranslation(0, 0, 0) * Matrix.CreateScale(Vector3.One * 0.2f);
         Matrix view = Matrix.CreateLookAt(new Vector3(0, 0, 3), new Vector3(0, 0, 0), new Vector3(0, 1, 0));
@@ -70,17 +70,17 @@ namespace Game3D
             font = Content.Load<SpriteFont>("BasicFont");
             mesh = Content.Load<UmbrellaToolsKit.Animation3D.Mesh>("Woman");
 
-            basicEffect = new BasicEffect(GraphicsDevice);
+            basicEffect = Content.Load<Effect>("DiffuseLighting");
 
-            VertexPositionColor[] vertices = new VertexPositionColor[mesh.Vertices.Length];
+            VertexPositionColorNormal[] vertices = new VertexPositionColorNormal[mesh.Vertices.Length];
             for(int i = 0; i < mesh.Vertices.Length; i++)
             {
-                vertices[i] = new VertexPositionColor(mesh.Vertices[i], Color.Gray);
+                vertices[i] = new VertexPositionColorNormal(mesh.Vertices[i], Color.Gray, mesh.Normals[i]);
             }
-            System.Console.WriteLine(mesh.Vertices.Length);
+            System.Console.WriteLine(mesh.Normals.Length);
 
-            vertexBuffer = new VertexBuffer(GraphicsDevice, typeof(VertexPositionColor), mesh.Vertices.Length, BufferUsage.WriteOnly);
-            vertexBuffer.SetData<VertexPositionColor>(vertices);
+            vertexBuffer = new VertexBuffer(GraphicsDevice, typeof(VertexPositionColorNormal), mesh.Vertices.Length, BufferUsage.WriteOnly);
+            vertexBuffer.SetData<VertexPositionColorNormal>(vertices);
 
             indexBuffer = new IndexBuffer(GraphicsDevice, typeof(short), mesh.Indices.Length, BufferUsage.WriteOnly);
             indexBuffer.SetData(mesh.Indices);
@@ -112,16 +112,16 @@ namespace Game3D
         float angle;
         protected override void Draw(GameTime gameTime)
         {
-            GraphicsDevice.Clear(Color.White);
+            GraphicsDevice.Clear(Color.CornflowerBlue);
 
             angle += 0.5f;
             if (angle > 360.0f)
                 angle -= 360.0f;
-            basicEffect.World = world * Matrix.CreateRotationY(MathHelper.ToRadians(angle));
-            basicEffect.View = view;
-            basicEffect.Projection = projection;
-            basicEffect.VertexColorEnabled = true;
-            basicEffect.EnableDefaultLighting();
+            var worldEffect = Matrix.CreateRotationY(MathHelper.ToRadians(angle)) * world;
+
+            basicEffect.Parameters["World"].SetValue(worldEffect);
+            basicEffect.Parameters["View"].SetValue(view);
+            basicEffect.Parameters["Projection"].SetValue(projection);
 
             GraphicsDevice.SetVertexBuffer(vertexBuffer);
             GraphicsDevice.Indices = indexBuffer;
