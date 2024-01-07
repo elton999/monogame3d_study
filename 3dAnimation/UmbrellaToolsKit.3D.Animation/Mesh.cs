@@ -6,6 +6,7 @@ namespace UmbrellaToolsKit.Animation3D
     {
         public Vector3[] Vertices;
         public Vector3[] Normals;
+        public Vector2[] TexCoords;
         public short[] Indices;
     }
 }

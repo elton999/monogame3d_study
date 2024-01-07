@@ -33,6 +33,7 @@ namespace Game3D
         Vector3 lightRealPosition = new Vector3(0, 0, 0);
 
         UmbrellaToolsKit.Animation3D.Mesh mesh;
+        Texture2D modelTex2D;
 
         public Game1()
         {
@@ -72,18 +73,18 @@ namespace Game3D
         {
             font = Content.Load<SpriteFont>("BasicFont");
             mesh = Content.Load<UmbrellaToolsKit.Animation3D.Mesh>("Woman");
-
+            modelTex2D = Content.Load<Texture2D>("WomanTex");
             basicEffect = Content.Load<Effect>("DiffuseLighting");
 
-            VertexPositionColorNormal[] vertices = new VertexPositionColorNormal[mesh.Vertices.Length];
+            VertexPositionColorNormalTexture[] vertices = new VertexPositionColorNormalTexture[mesh.Vertices.Length];
             for(int i = 0; i < mesh.Vertices.Length; i++)
             {
-                vertices[i] = new VertexPositionColorNormal(mesh.Vertices[i], Color.White, mesh.Normals[i]);
+                vertices[i] = new VertexPositionColorNormalTexture(mesh.Vertices[i], Color.White, mesh.Normals[i], mesh.TexCoords[i]);
             }
-            System.Console.WriteLine(mesh.Normals.Length);
+            System.Console.WriteLine(mesh.TexCoords.Length);
 
-            vertexBuffer = new VertexBuffer(GraphicsDevice, typeof(VertexPositionColorNormal), mesh.Vertices.Length, BufferUsage.WriteOnly);
-            vertexBuffer.SetData<VertexPositionColorNormal>(vertices);
+            vertexBuffer = new VertexBuffer(GraphicsDevice, typeof(VertexPositionColorNormalTexture), mesh.Vertices.Length, BufferUsage.WriteOnly);
+            vertexBuffer.SetData<VertexPositionColorNormalTexture>(vertices);
 
             indexBuffer = new IndexBuffer(GraphicsDevice, typeof(short), mesh.Indices.Length, BufferUsage.WriteOnly);
             indexBuffer.SetData(mesh.Indices);
@@ -121,12 +122,13 @@ namespace Game3D
             if (angle > 360.0f)
                 angle -= 360.0f;
 
-            lightPosition = lightRealPosition + (Vector3.UnitZ) * MathF.Cos((float)gameTime.TotalGameTime.TotalMilliseconds * 0.005f) * 20f;
+            lightPosition = lightRealPosition + (Vector3.UnitZ) * MathF.Cos((float)gameTime.TotalGameTime.TotalMilliseconds * 0.0005f) * 20f;
 
             basicEffect.Parameters["World"].SetValue(world * Matrix.CreateRotationY(MathHelper.ToRadians(angle)));
             basicEffect.Parameters["View"].SetValue(view);
             basicEffect.Parameters["Projection"].SetValue(projection);
             basicEffect.Parameters["lightPosition"].SetValue(lightPosition);
+            basicEffect.Parameters["SpriteTexture"].SetValue(modelTex2D);
 
             GraphicsDevice.SetVertexBuffer(vertexBuffer);
             GraphicsDevice.Indices = indexBuffer;
@@ -140,20 +142,6 @@ namespace Game3D
                 pass.Apply();
                 GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, mesh.Vertices.Length, 0, mesh.Indices.Length / 3);
             }
-
-            basicEffect.Parameters["World"].SetValue(Matrix.CreateTranslation(lightPosition) * Matrix.CreateScale(Vector3.One * 0.1f));
-            basicEffect.Parameters["View"].SetValue(view);
-            basicEffect.Parameters["Projection"].SetValue(projection);
-
-            GraphicsDevice.SetVertexBuffer(vertexBuffer);
-            GraphicsDevice.Indices = indexBuffer;
-
-            foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
-            {
-                pass.Apply();
-                GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.LineList, 0, 0, mesh.Vertices.Length, 0, mesh.Indices.Length / 3);
-            }
-
 
             base.Draw(gameTime);
         }

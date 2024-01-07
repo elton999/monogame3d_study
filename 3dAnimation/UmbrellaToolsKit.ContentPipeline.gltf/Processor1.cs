@@ -18,11 +18,12 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
             return mesh;
         }
 
-        public Animation3D.Mesh LoadMesh(glTFLoader.Schema.Gltf gltf)
+        public TOutput LoadMesh(TInput gltf)
         {
-            var meshR = new Animation3D.Mesh();
+            var meshR = new TOutput();
             var vertices = new List<Vector3>();
             var normals = new List<Vector3>();
+            var texCoords = new List<Vector2>();
             var indices = new List<short>();
             
             for(int i = 0; i < gltf.Meshes.Length; i++)
@@ -71,6 +72,19 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
                         }
                     }
 
+                    //Texture Coords
+                    if (attributes[i].Attributes.ContainsKey("TEXCOORD_0") && attributes[i].Attributes["TEXCOORD_0"] == j && accessor.Type == glTFLoader.Schema.Accessor.TypeEnum.VEC2)
+                    {
+                        for (int n = bufferView.ByteOffset; n < bufferView.ByteOffset + bufferView.ByteLength; n += 4)
+                        {
+                            float x = BitConverter.ToSingle(uriBytes, n);
+                            n += 4;
+                            float y = BitConverter.ToSingle(uriBytes, n);
+
+                            texCoords.Add(new Vector2(x, y));
+                        }
+                    }
+
                     // Indicies
                     if (accessor.ComponentType == glTFLoader.Schema.Accessor.ComponentTypeEnum.UNSIGNED_SHORT)
                     {
@@ -82,9 +96,11 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
                     }
                 }
             }
+
             meshR.Vertices = vertices.ToArray();
             meshR.Normals = normals.ToArray();
             meshR.Indices = indices.ToArray();
+            meshR.TexCoords = texCoords.ToArray();
             return meshR;
         }
 

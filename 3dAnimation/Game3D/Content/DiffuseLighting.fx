@@ -12,17 +12,26 @@ float4x4 View;
 float4x4 Projection;
 float3 lightPosition;
 
+Texture2D SpriteTexture;
+
+sampler2D SpriteTextureSampler = sampler_state
+{
+    Texture = <SpriteTexture>;
+};
+
 struct VertexShaderInput
 {
 	float4 Position : POSITION0;
 	float4 Color : COLOR0;
 	float4 Normal : NORMAL0;
+    float2 TextureCoordinates : TEXCOORD0;
 };
 
 struct VertexShaderOutput
 {
 	float4 Position : SV_POSITION;
 	float4 Color : COLOR0;
+    float2 TextureCoordinates : TEXCOORD1;
 };
 
 // code copied from: https://gist.github.com/mattatz/86fff4b32d198d0928d0fa4ff32cf6fa
@@ -79,12 +88,13 @@ VertexShaderOutput MainVS(in VertexShaderInput input)
 	float4 diffusse = diff * float4(1, 1, 1, 1);
 
 	output.Color = input.Color * (float4(0,0,0,0) + diffusse);
+    output.TextureCoordinates = input.TextureCoordinates;
 	return output;
 }
 
 float4 MainPS(VertexShaderOutput input) : COLOR
 {
-	float4 result = input.Color;
+	float4 result = tex2D(SpriteTextureSampler,input.TextureCoordinates) * input.Color;
 
 	return result;
 }
