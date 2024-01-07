@@ -75,7 +75,7 @@ VertexShaderOutput MainVS(in VertexShaderInput input)
 	float4 norm = normalize(mul(inverse(World), input.Normal));
 	float4 lightDir = normalize(float4(lightPosition, 0) - float4(fragPos[0], fragPos[1], fragPos[2], 1));
 
-	float diff = max(dot(norm, lightDir)+0.5, 0);
+	float diff = max(dot(norm, lightDir), 0);
 	float4 diffusse = diff * float4(1, 1, 1, 1);
 
 	output.Color = input.Color * (float4(0,0,0,0) + diffusse);

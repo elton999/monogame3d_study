@@ -121,7 +121,7 @@ namespace Game3D
             if (angle > 360.0f)
                 angle -= 360.0f;
 
-            lightPosition = lightRealPosition + (Vector3.UnitZ) * MathF.Cos((float)gameTime.TotalGameTime.TotalMilliseconds * 0.0005f) * 20f;
+            lightPosition = lightRealPosition + (Vector3.UnitZ) * MathF.Cos((float)gameTime.TotalGameTime.TotalMilliseconds * 0.005f) * 20f;
 
             basicEffect.Parameters["World"].SetValue(world * Matrix.CreateRotationY(MathHelper.ToRadians(angle)));
             basicEffect.Parameters["View"].SetValue(view);
