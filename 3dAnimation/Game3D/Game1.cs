@@ -105,6 +105,9 @@ namespace Game3D
             model.SetWorld(world);
             model.Draw(GraphicsDevice, projection, view);
 
+            Line line = new Line(Vector3.Zero, Vector3.UnitX * 1f, GraphicsDevice);
+            line.Draw(GraphicsDevice, projection, view);
+
             base.Draw(gameTime);
         }
     }
