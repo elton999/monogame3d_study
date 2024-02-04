@@ -21,19 +21,14 @@ namespace Game3D
         
         RenderTarget2D MainTarget;
 
-        VertexBuffer vertexBuffer;
-        IndexBuffer indexBuffer;
-        Effect basicEffect;
-
         Matrix world = Matrix.CreateTranslation(0, 0, 0) * Matrix.CreateScale(Vector3.One * 0.2f);
         Matrix view = Matrix.CreateLookAt(new Vector3(0, 0, 3), new Vector3(0, 0, 0), new Vector3(0, 1, 0));
         Matrix projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(45), SCREENWIDTH / SCREENHEIGHT, 0.01f, 100f);
 
         Vector3 lightPosition = new Vector3(2, 2, 2);
-        Vector3 lightRealPosition = new Vector3(0, 0, 0);
 
         UmbrellaToolsKit.Animation3D.Mesh mesh;
-        Texture2D modelTex2D;
+        UmbrellaToolsKit.Animation3D.Model model;
 
         public Game1()
         {
@@ -73,21 +68,11 @@ namespace Game3D
         {
             font = Content.Load<SpriteFont>("BasicFont");
             mesh = Content.Load<UmbrellaToolsKit.Animation3D.Mesh>("Woman");
-            modelTex2D = Content.Load<Texture2D>("WomanTex");
-            basicEffect = Content.Load<Effect>("DiffuseLighting");
-
-            VertexPositionColorNormalTexture[] vertices = new VertexPositionColorNormalTexture[mesh.Vertices.Length];
-            for(int i = 0; i < mesh.Vertices.Length; i++)
-            {
-                vertices[i] = new VertexPositionColorNormalTexture(mesh.Vertices[i], Color.White, mesh.Normals[i], mesh.TexCoords[i]);
-            }
-            System.Console.WriteLine(mesh.TexCoords.Length);
-
-            vertexBuffer = new VertexBuffer(GraphicsDevice, typeof(VertexPositionColorNormalTexture), mesh.Vertices.Length, BufferUsage.WriteOnly);
-            vertexBuffer.SetData<VertexPositionColorNormalTexture>(vertices);
-
-            indexBuffer = new IndexBuffer(GraphicsDevice, typeof(short), mesh.Indices.Length, BufferUsage.WriteOnly);
-            indexBuffer.SetData(mesh.Indices);
+            
+            model = new UmbrellaToolsKit.Animation3D.Model(mesh, GraphicsDevice);
+            model.SetTexture(Content.Load<Texture2D>("WomanTex"));
+            model.SetLightPosition(lightPosition);
+            model.SetEffect(Content.Load<Effect>("DiffuseLighting"));
         }
 
         bool init = true;
@@ -113,35 +98,12 @@ namespace Game3D
                 gpu.RasterizerState = rs_ccW;
         }
 
-        float angle;
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
-            angle += 0.5f;
-            if (angle > 360.0f)
-                angle -= 360.0f;
-
-            lightPosition = lightRealPosition + (Vector3.UnitZ) * MathF.Cos((float)gameTime.TotalGameTime.TotalMilliseconds * 0.0005f) * 20f;
-
-            basicEffect.Parameters["World"].SetValue(world * Matrix.CreateRotationY(MathHelper.ToRadians(angle)));
-            basicEffect.Parameters["View"].SetValue(view);
-            basicEffect.Parameters["Projection"].SetValue(projection);
-            basicEffect.Parameters["lightPosition"].SetValue(lightPosition);
-            basicEffect.Parameters["SpriteTexture"].SetValue(modelTex2D);
-
-            GraphicsDevice.SetVertexBuffer(vertexBuffer);
-            GraphicsDevice.Indices = indexBuffer;
-
-            RasterizerState rasterizerState = new RasterizerState();
-            rasterizerState.CullMode = CullMode.None;
-            GraphicsDevice.RasterizerState = rasterizerState;
-
-            foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
-            {
-                pass.Apply();
-                GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, mesh.Vertices.Length, 0, mesh.Indices.Length / 3);
-            }
+            model.SetProjection(projection);
+            model.Draw(GraphicsDevice, world, view);
 
             base.Draw(gameTime);
         }

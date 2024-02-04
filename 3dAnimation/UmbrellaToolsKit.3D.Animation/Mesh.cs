@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace UmbrellaToolsKit.Animation3D
 {
@@ -8,5 +9,8 @@ namespace UmbrellaToolsKit.Animation3D
         public Vector3[] Normals;
         public Vector2[] TexCoords;
         public short[] Indices;
+        public Joint[] Joints;
+
+        
     }
 }
