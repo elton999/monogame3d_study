@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using Assimp;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content.Pipeline;
-
+using UmbrellaToolsKit.Animation3D;
 using TInput = glTFLoader.Schema.Gltf;
 using TOutput = UmbrellaToolsKit.Animation3D.Mesh;
 
@@ -25,6 +26,7 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
             var normals = new List<Vector3>();
             var texCoords = new List<Vector2>();
             var indices = new List<short>();
+            var joints = new List<Joint>();
             
             for(int i = 0; i < gltf.Meshes.Length; i++)
             {
@@ -97,6 +99,27 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
                 }
             }
 
+            foreach(var node in gltf.Nodes)
+            {
+                var joint = new Joint(
+                    node.Name, new Vector3(node.Translation[0], node.Translation[1], node.Translation[2]));
+                joints.Add(joint);  
+            }
+
+
+            for (int i = 0; i < gltf.Nodes.Length; i++)
+            {
+                var node = gltf.Nodes[i];
+                try
+                {
+                    if (node.Children.Length > 0)
+                    {
+                        foreach (var child in node.Children)
+                            joints[i].Children.Add(joints[child]);
+                    }
+                }catch{}
+                
+            }
             meshR.Vertices = vertices.ToArray();
             meshR.Normals = normals.ToArray();
             meshR.Indices = indices.ToArray();
