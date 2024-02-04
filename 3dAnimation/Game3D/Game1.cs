@@ -102,8 +102,8 @@ namespace Game3D
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
-            model.SetProjection(projection);
-            model.Draw(GraphicsDevice, world, view);
+            model.SetWorld(world);
+            model.Draw(GraphicsDevice, projection, view);
 
             base.Draw(gameTime);
         }

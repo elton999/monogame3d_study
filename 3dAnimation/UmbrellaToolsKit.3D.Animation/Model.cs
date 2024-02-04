@@ -10,7 +10,7 @@ namespace UmbrellaToolsKit.Animation3D
         private VertexBuffer _vertexBuffer;
         private IndexBuffer _indexBuffer;
         
-        private Matrix _modelProjection;
+        private Matrix _modelWorld;
         private Texture _texture;
 
         private Effect basicEffect;
@@ -24,15 +24,15 @@ namespace UmbrellaToolsKit.Animation3D
         }
 
         public void SetLightPosition(Vector3 lightPosition) => _lightPosition = lightPosition;
-        public void SetProjection(Matrix projection) => _modelProjection = projection;
+        public void SetWorld(Matrix world) => _modelWorld = world;
         public void SetEffect(Effect effect) => basicEffect = effect;
         public void SetTexture(Texture texture) => _texture = texture;
 
-        public void Draw(GraphicsDevice graphicsDevice, Matrix world, Matrix view)
+        public void Draw(GraphicsDevice graphicsDevice, Matrix projection, Matrix view)
         {
-            basicEffect.Parameters["World"].SetValue(world);
+            basicEffect.Parameters["World"].SetValue(_modelWorld);
             basicEffect.Parameters["View"].SetValue(view);
-            basicEffect.Parameters["Projection"].SetValue(_modelProjection);
+            basicEffect.Parameters["Projection"].SetValue(projection);
             basicEffect.Parameters["lightPosition"].SetValue(_lightPosition);
             basicEffect.Parameters["SpriteTexture"].SetValue(_texture);
 
