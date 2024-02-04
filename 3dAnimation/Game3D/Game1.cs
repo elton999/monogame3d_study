@@ -1,8 +1,9 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using System;
+using System.Collections.Generic;
 using UmbrellaToolsKit;
+using UmbrellaToolsKit.Animation3D;
 
 namespace Game3D
 {
@@ -21,9 +22,9 @@ namespace Game3D
         
         RenderTarget2D MainTarget;
 
-        Matrix world = Matrix.CreateTranslation(0, 0, 0) * Matrix.CreateScale(Vector3.One * 0.2f);
-        Matrix view = Matrix.CreateLookAt(new Vector3(0, 0, 3), new Vector3(0, 0, 0), new Vector3(0, 1, 0));
-        Matrix projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(45), SCREENWIDTH / SCREENHEIGHT, 0.01f, 100f);
+        Matrix world = Matrix.CreateTranslation(0, 0, 0);
+        Matrix view = Matrix.CreateLookAt(new Vector3(0, 4, 14), new Vector3(0, 0, 0), new Vector3(0, 1, 0));
+        Matrix projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(45), SCREENWIDTH / SCREENHEIGHT, 0.01f, 100000f);
 
         Vector3 lightPosition = new Vector3(2, 2, 2);
 
@@ -98,6 +99,9 @@ namespace Game3D
                 gpu.RasterizerState = rs_ccW;
         }
 
+        private float angle = 0;
+            Joint[] joints = new Joint[] { new Joint() { Name = "0"}, new Joint() { Name = "1" }, new Joint() { Name = "2" }, new Joint() { Name = "3" }, new Joint() { Name = "4" } };
+
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
@@ -105,10 +109,46 @@ namespace Game3D
             model.SetWorld(world);
             model.Draw(GraphicsDevice, projection, view);
 
-            Line line = new Line(Vector3.Zero, Vector3.UnitX * 1f, GraphicsDevice);
-            line.Draw(GraphicsDevice, projection, view);
 
+            foreach (var joint in mesh.Joints)
+            {
+                if (joint.Parents.Count > 0)
+                {
+                    Line line = new Line(GetGlobalTransform(joint.Parents[0]).Position, GetGlobalTransform(joint).Position, GraphicsDevice, Color.Red);
+                    line.Draw(GraphicsDevice, projection, view);
+                }
+
+                else
+                {
+                    Line line = new Line(Vector3.Zero, joint.Transform.Position, GraphicsDevice);
+                    line.Draw(GraphicsDevice, projection, view);
+                }
+            }
             base.Draw(gameTime);
+        }
+
+        private Transform GetGlobalTransform(Joint joint)
+        {
+            if (joint.Parents.Count == 0)
+                return joint.Transform;
+
+            Joint jointParent = joint.Parents[0];
+            List<Transform> AllTransforms = new List<Transform>();
+
+            while(jointParent.Parents.Count != 0)
+            {
+                jointParent = jointParent.Parents[0];
+                AllTransforms.Add(jointParent.Transform);
+            }
+            Transform result = joint.Transform;
+
+            for (int i = 0; i < AllTransforms.Count; ++i)
+            {
+                Transform transform = AllTransforms[i];
+                result = Transform.Conbine(transform, result);
+            }
+
+            return result;
         }
     }
 }

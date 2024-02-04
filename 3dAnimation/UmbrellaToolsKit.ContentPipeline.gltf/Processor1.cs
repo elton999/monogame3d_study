@@ -101,8 +101,11 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
 
             foreach(var node in gltf.Nodes)
             {
+                var vector = new Vector3(node.Translation[0], node.Translation[1], node.Translation[2]);
+                var quat = new Microsoft.Xna.Framework.Quaternion(node.Rotation[0], node.Rotation[1], node.Rotation[2], node.Rotation[3]);
+                var scale = new Vector3(node.Scale[0], node.Scale[1], node.Scale[2]);
                 var joint = new Joint(
-                    node.Name, new Vector3(node.Translation[0], node.Translation[1], node.Translation[2]));
+                    node.Name, new Transform(vector, quat, scale));
                 joints.Add(joint);  
             }
 
@@ -115,7 +118,7 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
                     if (node.Children.Length > 0)
                     {
                         foreach (var child in node.Children)
-                            joints[i].Children.Add(joints[child]);
+                            joints[child].Parents.Add(joints[i]);
                     }
                 }catch{}
                 
@@ -124,6 +127,7 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
             meshR.Normals = normals.ToArray();
             meshR.Indices = indices.ToArray();
             meshR.TexCoords = texCoords.ToArray();
+            meshR.Joints = joints.ToArray();
             return meshR;
         }
 

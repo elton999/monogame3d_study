@@ -6,14 +6,19 @@ namespace UmbrellaToolsKit.Animation3D
     public class Joint
     {
         public string Name;
-        public Vector3 Position;
-        public List<Joint> Children;
+        public Transform Transform;
+        public List<Joint> Parents;
 
-        public Joint(string name, Vector3 position) 
+        public Joint(string name, Transform transform) 
         {
             Name = name;
-            Position = position;
-            Children = new List<Joint>();
+            Transform = transform;
+            Parents = new List<Joint>();
+        }
+
+        public Joint() 
+        {
+            Parents = new List<Joint>();
         }
     }
 }

@@ -9,8 +9,6 @@ namespace UmbrellaToolsKit.Animation3D
         public Vector3[] Normals;
         public Vector2[] TexCoords;
         public short[] Indices;
-        public Joint[] Joints;
-
-        
+        public Joint[] Joints;   
     }
 }
