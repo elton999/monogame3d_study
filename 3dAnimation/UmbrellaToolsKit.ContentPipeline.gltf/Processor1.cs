@@ -110,7 +110,7 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
             }
 
 
-            for (int i = 0; i < gltf.Nodes.Length; i++)
+            for (int i = 0; i < gltf.Nodes.Length; ++i)
             {
                 var node = gltf.Nodes[i];
                 try
@@ -118,7 +118,7 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
                     if (node.Children.Length > 0)
                     {
                         foreach (var child in node.Children)
-                            joints[child].Parents.Add(joints[i]);
+                            joints[child].Parent.Add(joints[i]);
                     }
                 }catch{}
                 

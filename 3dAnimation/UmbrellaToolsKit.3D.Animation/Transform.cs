@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
+using System;
 
 namespace UmbrellaToolsKit.Animation3D
 {
@@ -33,10 +34,11 @@ namespace UmbrellaToolsKit.Animation3D
         public static Vector3 QuatMultVector(Quaternion q, Vector3 v)
         {
             Vector3 qVector = new Vector3(q.X, q.Y, q.Z);
+            float scalar = q.W;
 
             return qVector * 2.0f * Vector3.Dot(qVector, v) +
-            v * (q.W * q.W - Vector3.Dot(qVector, qVector)) +
-            Vector3.Cross(qVector, v) * 2.0f * q.W;
+            v * (MathF.Pow(scalar, 2) - Vector3.Dot(qVector, qVector)) +
+            Vector3.Cross(qVector, v) * 2.0f * scalar;
         }
     }
 }

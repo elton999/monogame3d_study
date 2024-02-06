@@ -23,7 +23,7 @@ namespace Game3D
         RenderTarget2D MainTarget;
 
         Matrix world = Matrix.CreateTranslation(0, 0, 0);
-        Matrix view = Matrix.CreateLookAt(new Vector3(0, 4, 14), new Vector3(0, 0, 0), new Vector3(0, 1, 0));
+        Matrix view = Matrix.CreateLookAt(new Vector3(0, 4, 14), new Vector3(0, 3, 0), new Vector3(0, 1, 0));
         Matrix projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(45), SCREENWIDTH / SCREENHEIGHT, 0.01f, 100000f);
 
         Vector3 lightPosition = new Vector3(2, 2, 2);
@@ -112,12 +112,11 @@ namespace Game3D
 
             foreach (var joint in mesh.Joints)
             {
-                if (joint.Parents.Count > 0)
+                if (joint.Parent.Count > 0)
                 {
-                    Line line = new Line(GetGlobalTransform(joint.Parents[0]).Position, GetGlobalTransform(joint).Position, GraphicsDevice, Color.Red);
+                    Line line = new Line(GetGlobalTransform(joint.Parent[0]).Position, GetGlobalTransform(joint).Position, GraphicsDevice, Color.Red);
                     line.Draw(GraphicsDevice, projection, view);
                 }
-
                 else
                 {
                     Line line = new Line(Vector3.Zero, joint.Transform.Position, GraphicsDevice);
@@ -129,16 +128,19 @@ namespace Game3D
 
         private Transform GetGlobalTransform(Joint joint)
         {
-            if (joint.Parents.Count == 0)
+            if (joint.Parent.Count == 0)
                 return joint.Transform;
 
-            Joint jointParent = joint.Parents[0];
+            Joint jointParent = joint.Parent[0];
             List<Transform> AllTransforms = new List<Transform>();
 
-            while(jointParent.Parents.Count != 0)
+            while(jointParent.Parent.Count != 0)
             {
-                jointParent = jointParent.Parents[0];
-                AllTransforms.Add(jointParent.Transform);
+                foreach(var currentTransform in jointParent.Parent)
+                {
+                    jointParent = currentTransform;
+                    AllTransforms.Add(jointParent.Transform);
+                }
             }
             Transform result = joint.Transform;
 
