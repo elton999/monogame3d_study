@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using System;
 using System.Collections.Generic;
 using UmbrellaToolsKit;
 using UmbrellaToolsKit.Animation3D;
@@ -104,9 +105,13 @@ namespace Game3D
 
         protected override void Draw(GameTime gameTime)
         {
+            angle += 0.8f;
+            if (angle > 360.0f)
+                angle -= 360.0f;
+
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
-            model.SetWorld(world);
+            model.SetWorld(world * Matrix.CreateRotationY(MathHelper.ToRadians(angle)));
             model.Draw(GraphicsDevice, projection, view);
 
 
@@ -114,15 +119,15 @@ namespace Game3D
             {
                 if (joint.Parent.Count > 0)
                 {
-                    Line line = new Line(GetGlobalTransform(joint.Parent[0]).Position, GetGlobalTransform(joint).Position, GraphicsDevice, Color.Red);
-                    line.Draw(GraphicsDevice, projection, view);
-                }
-                else
-                {
-                    Line line = new Line(Vector3.Zero, joint.Transform.Position, GraphicsDevice);
-                    line.Draw(GraphicsDevice, projection, view);
+                    foreach(var parent in joint.Parent)
+                    {
+                        Line line = new Line(GetGlobalTransform(parent).Position, GetGlobalTransform(joint).Position, GraphicsDevice, Color.Red);
+                        line.SetWorld(world * Matrix.CreateRotationY(MathHelper.ToRadians(angle)));
+                        line.Draw(GraphicsDevice, projection, view);
+                    }
                 }
             }
+
             base.Draw(gameTime);
         }
 
@@ -131,17 +136,22 @@ namespace Game3D
             if (joint.Parent.Count == 0)
                 return joint.Transform;
 
-            Joint jointParent = joint.Parent[0];
             List<Transform> AllTransforms = new List<Transform>();
 
-            while(jointParent.Parent.Count != 0)
+            foreach(var jointParent1 in joint.Parent)
             {
-                foreach(var currentTransform in jointParent.Parent)
+                Joint jointParent = jointParent1;
+                AllTransforms.Add(jointParent1.Transform);
+                while (jointParent.Parent.Count != 0)
                 {
-                    jointParent = currentTransform;
-                    AllTransforms.Add(jointParent.Transform);
+                    foreach (var currentTransform in jointParent.Parent)
+                    {
+                        jointParent = currentTransform;
+                        AllTransforms.Add(jointParent.Transform);
+                    }
                 }
             }
+            
             Transform result = joint.Transform;
 
             for (int i = 0; i < AllTransforms.Count; ++i)
@@ -149,7 +159,6 @@ namespace Game3D
                 Transform transform = AllTransforms[i];
                 result = Transform.Conbine(transform, result);
             }
-
             return result;
         }
     }
