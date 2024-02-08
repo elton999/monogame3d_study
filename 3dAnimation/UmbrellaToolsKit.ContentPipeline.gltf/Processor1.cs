@@ -113,16 +113,15 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
             for (int i = 0; i < gltf.Nodes.Length; ++i)
             {
                 var node = gltf.Nodes[i];
-                try
+                
+                if (node.Children != null && node.Children.Length > 0)
                 {
-                    if (node.Children.Length > 0)
-                    {
-                        foreach (var child in node.Children)
-                            joints[child].Parent.Add(joints[i]);
-                    }
-                }catch{}
+                    foreach (var child in node.Children)
+                        joints[child].Parent.Add(joints[i]);
+                }
                 
             }
+
             meshR.Vertices = vertices.ToArray();
             meshR.Normals = normals.ToArray();
             meshR.Indices = indices.ToArray();
