@@ -3,7 +3,7 @@ using Microsoft.Xna.Framework;
 
 namespace UmbrellaToolsKit.Animation3D.Tracks
 {
-    internal class QuaternionTrack : Track<Quaternion>
+    public class QuaternionTrack : Track<Quaternion>
     {
         public override void Resize(int size)
         {

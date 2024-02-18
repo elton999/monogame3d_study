@@ -9,6 +9,8 @@ namespace UmbrellaToolsKit.Animation3D
         public Quaternion Rotation; 
         public Vector3 Scale;
 
+        public Transform() { }
+
         public Transform(Vector3 position, Quaternion rotation, Vector3 scale)
         {
             Position = position;
@@ -16,9 +18,7 @@ namespace UmbrellaToolsKit.Animation3D
             Scale = scale;
         }
 
-        public Transform() { }
-
-        public static Transform Conbine(Transform a, Transform b)
+        public static Transform Combine(Transform a, Transform b)
         {
             Transform result = new Transform();
 
@@ -39,6 +39,26 @@ namespace UmbrellaToolsKit.Animation3D
             return qVector * 2.0f * Vector3.Dot(qVector, v) +
             v * (MathF.Pow(scalar, 2) - Vector3.Dot(qVector, qVector)) +
             Vector3.Cross(qVector, v) * 2.0f * scalar;
+        }
+
+        public static Matrix TransformToMatrix(Transform t)
+        {
+            Vector3 x = QuatMultVector(t.Rotation, Vector3.UnitX);
+            Vector3 y = QuatMultVector(t.Rotation, Vector3.UnitY);
+            Vector3 z = QuatMultVector(t.Rotation, Vector3.UnitZ);
+
+            x = x * t.Scale.X;
+            y = y * t.Scale.Y;
+            z = z * t.Scale.Z;
+
+            Vector3 p = t.Position;
+
+            return new Matrix(
+                x.X, x.Y, x.Z, 0, // x basis (& Scale)
+                y.X, y.Y, y.Z, 0, // Y basis (& Scale)
+                z.X, z.Y, z.Z, 0, // Z basis (& Scale)
+                p.X, p.Y, p.Z, 1 // Position
+            );
         }
     }
 }

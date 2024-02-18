@@ -157,7 +157,7 @@ namespace Game3D
             for (int i = 0; i < AllTransforms.Count; ++i)
             {
                 Transform transform = AllTransforms[i];
-                result = Transform.Conbine(transform, result);
+                result = Transform.Combine(transform, result);
             }
             return result;
         }
