@@ -17,6 +17,7 @@ namespace UmbrellaToolsKit.Animation3D
             mStartTime = 0.0f;
             mEndTime = 0.0f;
             mLooping = true;
+            mTracks = new List<TransformTrack>();
         }
 
         protected float AdjustTimeToFitRange(float inTime)

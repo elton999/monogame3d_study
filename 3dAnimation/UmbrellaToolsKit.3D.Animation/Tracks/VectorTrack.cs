@@ -4,6 +4,16 @@ namespace UmbrellaToolsKit.Animation3D.Tracks
 {
     public class VectorTrack : Track<Vector3>
     {
+        public override Frame this[int index]
+        {
+            get
+            {
+                if (mFrames[index] == null)
+                    mFrames[index] = new VectorFrame();
+                return mFrames[index];
+            }
+        }
+
         protected override Vector3 Cast(float[] value) => new Vector3(value[0], value[1], value[2]);
 
         protected override Vector3 Hermite(float t, Vector3 p1, Vector3 s1, Vector3 _p2, Vector3 s2)
@@ -26,7 +36,7 @@ namespace UmbrellaToolsKit.Animation3D.Tracks
         protected override Vector3 SampleCubic(float time, bool looping)
         {
             int thisFrame = FrameIndex(time, looping);
-            if (thisFrame < 0 || thisFrame >= (int)(mFrames.Count - 1))
+            if (thisFrame < 0 || thisFrame >= (int)(mFrames.Length - 1))
                 return Vector3.Zero;
             
             int nextFrame = thisFrame + 1;
@@ -52,7 +62,7 @@ namespace UmbrellaToolsKit.Animation3D.Tracks
         protected override Vector3 SampleLinear(float time, bool looping)
         {
             int thisFrame = FrameIndex(time, looping);
-            if (thisFrame < 0 || thisFrame >= (int)(mFrames.Count - 1))
+            if (thisFrame < 0 || thisFrame >= (int)(mFrames.Length - 1))
                 return Vector3.Zero;
 
             int nextFrame = thisFrame + 1;

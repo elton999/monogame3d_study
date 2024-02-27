@@ -4,6 +4,15 @@ namespace UmbrellaToolsKit.Animation3D.Tracks
 {
     public class QuaternionTrack : Track<Quaternion>
     {
+        public override Frame this[int index]
+        {
+            get
+            {
+                if (mFrames[index] == null)
+                    mFrames[index] = new QuaternionFrame();
+                return mFrames[index];
+            }
+        }
 
         protected override Quaternion Cast(float[] value)
         {
@@ -31,7 +40,7 @@ namespace UmbrellaToolsKit.Animation3D.Tracks
         protected override Quaternion SampleCubic(float time, bool looping)
         {
             int thisFrame = FrameIndex(time, looping);
-            if (thisFrame < 0 || thisFrame >= (int)(mFrames.Count - 1))
+            if (thisFrame < 0 || thisFrame >= (int)(mFrames.Length - 1))
                 return new Quaternion();
 
             int nextFrame = thisFrame + 1;
@@ -57,7 +66,7 @@ namespace UmbrellaToolsKit.Animation3D.Tracks
         protected override Quaternion SampleLinear(float time, bool looping)
         {
             int thisFrame = FrameIndex(time, looping);
-            if (thisFrame < 0 || thisFrame >= (int)(mFrames.Count - 1))
+            if (thisFrame < 0 || thisFrame >= (int)(mFrames.Length - 1))
                 return new Quaternion();
 
             int nextFrame = thisFrame + 1;

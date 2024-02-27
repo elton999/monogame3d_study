@@ -1,12 +1,15 @@
 ﻿using Microsoft.Xna.Framework;
+using System;
 using System.Collections.Generic;
 
 namespace UmbrellaToolsKit.Animation3D
 {
     public class Pose
     {
-        protected Transform[] mJoints;
-        protected int[] mParents;
+        public Transform[] mJoints;
+        public int[] mParents;
+
+        public Pose() { }
 
         public Pose(int numJoint) => Resize(numJoint);
 
@@ -16,17 +19,29 @@ namespace UmbrellaToolsKit.Animation3D
             mParents = new int[numJoint];
         }
 
-        public int Size() => mJoints.Length;
+        public int Size() => mJoints != null ? mJoints.Length : 0;
 
         public Transform GetLocalTransform(int index) => mJoints[index];
 
         public void SetLocalTransform(int index, Transform transform) => mJoints[index] = transform;
 
-        public Transform GetGlobalTransform(int i)
+        public Transform GetGlobalTransform(int index)
         {
-            Transform result = mJoints[i];
-            for (int p = mParents[i]; p >= 0; p = mParents[p])
-                result = Transform.Combine(mJoints[p], result);
+            Transform result = mJoints[index];
+            //for (int p = mParents[i]; p < mParents.Length; p++)
+            //    result = Transform.Combine(mJoints[p], result);
+
+            int parentIndex = GetParent(index);
+            List<int> lastIndex = new List<int>();
+            lastIndex.Add(-1);
+
+            while (parentIndex != -1 && parentIndex != index)
+            {
+                System.Console.WriteLine(parentIndex);
+                result = Transform.Combine(mJoints[parentIndex], result);
+                lastIndex.Add(parentIndex);
+                parentIndex = GetParent(parentIndex);
+            }
 
             return result;
         }
@@ -50,7 +65,14 @@ namespace UmbrellaToolsKit.Animation3D
             }
         }
 
-        public int GetParent(int index) => mParents[index];
+        public int GetParent(int index) 
+        {
+            if (index == mParents.Length - 1)
+                return -1;
+            if(index >= mParents.Length)
+                return -1;
+            return mParents[index];
+        }
 
         public void SetParent(int index, int parent) => mParents[index] = parent;
     }

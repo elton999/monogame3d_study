@@ -9,6 +9,13 @@ namespace UmbrellaToolsKit.Animation3D
         protected QuaternionTrack mRotation;
         protected VectorTrack mScale;
 
+        public TransformTrack()
+        {
+            mPosition = new VectorTrack();
+            mRotation = new QuaternionTrack();
+            mScale = new VectorTrack();
+        }
+
         public int GetID() => mId;
         
         public  void SetID(int id) => mId= id;

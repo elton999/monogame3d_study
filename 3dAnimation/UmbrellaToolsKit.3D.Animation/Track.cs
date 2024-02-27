@@ -1,34 +1,41 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace UmbrellaToolsKit.Animation3D
 {
     public abstract class Track<T>
     {
-        protected List<Frame> mFrames;
-        protected Interpolation mInterpolation;
+        public Frame[] mFrames = new Frame[300];
+        public Interpolation mInterpolation;
 
-        public List<Frame> Frame => mFrames;
-
-        public Track() => mInterpolation = Interpolation.Linear;
-
-        public Frame this[int index] => mFrames[index];
-
-        public void Resize(int size)
+        public Frame[] Frame 
         {
-            mFrames.Capacity = size;
-            mFrames.TrimExcess();
+            get
+            {
+                if(mFrames == null)
+                    mFrames = new Frame[1];
+                return mFrames;
+            }
         }
 
-        public int Size() => mFrames.Count;
+        public Track()
+        {
+            mInterpolation = Interpolation.Linear;
+            mFrames = new Frame[300];
+        }
+
+        public abstract Frame this[int index] { get; }
+
+        public int Size() => Frame.Length;
+
+        public void Resize(int value) => mFrames = new Frame[value];
 
         public Interpolation GetInterpolation() =>  mInterpolation;
         
         public void SetInterpolation(Interpolation interpolation) => mInterpolation = interpolation;
         
-        public float GetStartTime() => mFrames[0].mTime;
+        public float GetStartTime() => this[0].mTime;
         
-        public float GetEndTime() => mFrames[mFrames.Count - 1].mTime;
+        public float GetEndTime() => this[mFrames.Length - 1].mTime;
         
         public T Sample(float time, bool looping)
         {
@@ -42,7 +49,7 @@ namespace UmbrellaToolsKit.Animation3D
         protected T SampleConstant(float time, bool looping)
         {
             int frame = FrameIndex(time, looping);
-            if (frame < 0 || frame >= (int)mFrames.Count)
+            if (frame < 0 || frame >= (int)mFrames.Length)
                 return (T)Convert.ChangeType(null, typeof(T));
 
             return Cast(mFrames[frame].mValue);
@@ -50,7 +57,7 @@ namespace UmbrellaToolsKit.Animation3D
 
         protected float AdjustTimeToFitTrack(float time, bool looping)
         {
-            int size = (int)mFrames.Count;
+            int size = (int)mFrames.Length;
             if (size <= 1) { return 0.0f; }
 
             float startTime = mFrames[0].mTime;
@@ -77,7 +84,7 @@ namespace UmbrellaToolsKit.Animation3D
 
         protected int FrameIndex(float time, bool looping)
         {
-            int size = mFrames.Count;
+            int size = mFrames.Length;
             if (size <= 1) return -1;
 
             if (looping)

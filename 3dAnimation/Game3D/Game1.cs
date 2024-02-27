@@ -32,6 +32,11 @@ namespace Game3D
         UmbrellaToolsKit.Animation3D.Mesh mesh;
         UmbrellaToolsKit.Animation3D.Model model;
 
+        Pose currentPose;
+        Pose restPose;
+        float playbackTime;
+        int currentClip;
+
         public Game1()
         {
             graphics = new GraphicsDeviceManager(this);
@@ -69,12 +74,14 @@ namespace Game3D
         protected override void LoadContent()
         {
             font = Content.Load<SpriteFont>("BasicFont");
-            mesh = Content.Load<UmbrellaToolsKit.Animation3D.Mesh>("Woman");
+            mesh = Content.Load<Mesh>("Woman");
             
             model = new UmbrellaToolsKit.Animation3D.Model(mesh, GraphicsDevice);
             model.SetTexture(Content.Load<Texture2D>("WomanTex"));
             model.SetLightPosition(lightPosition);
             model.SetEffect(Content.Load<Effect>("DiffuseLighting"));
+
+            restPose = mesh.RestPose[0];
         }
 
         bool init = true;
@@ -87,6 +94,8 @@ namespace Game3D
 
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
+
+            playbackTime = mesh.Clips[currentClip].Sample(restPose, playbackTime + (float)gameTime.ElapsedGameTime.Milliseconds);
 
             base.Update(gameTime);
         }
@@ -101,8 +110,7 @@ namespace Game3D
         }
 
         private float angle = 0;
-            Joint[] joints = new Joint[] { new Joint() { Name = "0"}, new Joint() { Name = "1" }, new Joint() { Name = "2" }, new Joint() { Name = "3" }, new Joint() { Name = "4" } };
-
+        
         protected override void Draw(GameTime gameTime)
         {
             angle += 0.8f;
@@ -115,7 +123,7 @@ namespace Game3D
             model.Draw(GraphicsDevice, projection, view);
 
 
-            foreach (var joint in mesh.Joints)
+            /*foreach (var joint in mesh.Joints)
             {
                 if (joint.Parent.Count > 0)
                 {
@@ -125,6 +133,20 @@ namespace Game3D
                         line.SetWorld(world * Matrix.CreateRotationY(MathHelper.ToRadians(angle)));
                         line.Draw(GraphicsDevice, projection, view);
                     }
+                }
+            }*/
+
+            Console.WriteLine(restPose.Size());
+            for(int i = 0; i < restPose.Size(); i++)
+            {
+                int parentIndex = restPose.GetParent(i);
+                if(parentIndex != -1)
+                {
+                    Transform transform = restPose.GetGlobalTransform(i);
+                    Transform transformParent = restPose.GetGlobalTransform(parentIndex);
+                    Line line = new Line(transform.Position, transformParent.Position, GraphicsDevice, Color.Red);
+                    line.SetWorld(world * Matrix.CreateRotationY(MathHelper.ToRadians(angle)));
+                    line.Draw(GraphicsDevice, projection, view);
                 }
             }
 

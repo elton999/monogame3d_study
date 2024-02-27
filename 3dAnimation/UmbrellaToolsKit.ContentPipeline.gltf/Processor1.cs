@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using Assimp;
+using glTFLoader.Schema;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content.Pipeline;
 using UmbrellaToolsKit.Animation3D;
+using UmbrellaToolsKit.Animation3D.Tracks;
 using TInput = glTFLoader.Schema.Gltf;
 using TOutput = UmbrellaToolsKit.Animation3D.Mesh;
 
@@ -44,8 +45,7 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
                     // vertices
                     if (attributes[i].Attributes["POSITION"] == j && accessor.Type == glTFLoader.Schema.Accessor.TypeEnum.VEC3)
                     {
-                        float[] ScalingFactorForVariables = new float[3];
-                        ScalingFactorForVariables = new float[3] { 1.0f, 1.0f, 1.0f };
+                        float[] ScalingFactorForVariables = new float[3] { 1.0f, 1.0f, 1.0f };
 
                         for (int n = bufferView.ByteOffset; n < bufferView.ByteOffset + bufferView.ByteLength; n += 4)
                         {
@@ -102,10 +102,9 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
             foreach(var node in gltf.Nodes)
             {
                 var vector = new Vector3(node.Translation[0], node.Translation[1], node.Translation[2]);
-                var quat = new Microsoft.Xna.Framework.Quaternion(node.Rotation[0], node.Rotation[1], node.Rotation[2], node.Rotation[3]);
+                var quat = new Quaternion(node.Rotation[0], node.Rotation[1], node.Rotation[2], node.Rotation[3]);
                 var scale = new Vector3(node.Scale[0], node.Scale[1], node.Scale[2]);
-                var joint = new Joint(
-                    node.Name, new Transform(vector, quat, scale));
+                var joint = new Joint(node.Name, new Transform(vector, quat, scale));
                 joints.Add(joint);  
             }
 
@@ -119,7 +118,6 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
                     foreach (var child in node.Children)
                         joints[child].Parent.Add(joints[i]);
                 }
-                
             }
 
             meshR.Vertices = vertices.ToArray();
@@ -127,7 +125,212 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
             meshR.Indices = indices.ToArray();
             meshR.TexCoords = texCoords.ToArray();
             meshR.Joints = joints.ToArray();
+            meshR.Clips = LoadAnimationClips(gltf);
+            meshR.RestPose = new Pose[1] { LoadRestPose(gltf) };
+            meshR.CurrentPose = meshR.RestPose;
+
+            Console.WriteLine($"joins---->: {meshR.RestPose[0].Size()}");
             return meshR;
+        }
+
+        public static Pose LoadRestPose(glTFLoader.Schema.Gltf gltf)
+        {
+            int boneCount = gltf.Nodes.Length;
+            Console.WriteLine(boneCount);
+            Pose result = new Pose(boneCount);
+
+            for(int i = 0; i < boneCount; i++)
+            {
+                var node = gltf.Nodes[i];
+
+                Transform transform = GetLocalTransform(gltf, node);
+                result.SetLocalTransform(i, transform);
+
+                int parent = -1;
+                for(int j = 0; j < gltf.Nodes.Length; j++)
+                {
+                    if(gltf.Nodes[j].Children != null)
+                    {
+                        for (int k = 0; k < gltf.Nodes[j].Children.Length; k++)
+                            if (gltf.Nodes[j].Children[k] == i)
+                                parent = j;
+                        if(parent != -1)
+                            result.SetParent(i, parent);
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        public static Transform GetLocalTransform(glTFLoader.Schema.Gltf gltf, glTFLoader.Schema.Node node)
+        {
+            Transform result = new Transform();
+
+            if (node.Translation != null)
+                result.Position = new Vector3(node.Translation[0], node.Translation[1], node.Translation[2]);
+
+            if (node.Rotation != null)
+                result.Rotation = new Quaternion(node.Rotation[0], node.Rotation[1], node.Rotation[2], node.Rotation[3]);
+
+            if (node.Scale != null)
+                result.Scale = new Vector3(node.Scale[0], node.Scale[1], node.Scale[2]);
+
+            return result;
+        }
+
+        public static Clip[] LoadAnimationClips(glTFLoader.Schema.Gltf gltf)
+        {
+            Clip[] result;
+
+            int numClips = gltf.Animations.Length;
+            int numNodes = gltf.Nodes.Length;
+
+            result = new Clip[numClips];
+
+            for(int i = 0; i < numClips; ++i)
+            {
+                result[i] = new Clip();
+                result[i].SetName(gltf.Animations[i].Name);
+                var animation = gltf.Animations[i];
+
+                int numChannels = gltf.Animations[i].Channels.Length;
+                for (int j = 0; j < numChannels; ++j)
+                {
+                    var channel = gltf.Animations[i].Channels[j];
+                    var target = channel.Target;
+                    int nodeId = (int)target.Node;
+
+                    if(channel.Target.Path == AnimationChannelTarget.PathEnum.translation)
+                    {
+                        VectorTrack track = result[i][nodeId].GetPosition();
+                        TrackFromChannel(ref track, gltf, channel, animation, channel.Target.Path);
+                    }
+                    else if(channel.Target.Path == AnimationChannelTarget.PathEnum.scale)
+                    {
+                        VectorTrack track = result[i][nodeId].GetScale();
+                        TrackFromChannel(ref track, gltf, channel, animation, channel.Target.Path);
+                    }
+                    else if(channel.Target.Path == AnimationChannelTarget.PathEnum.rotation)
+                    {
+                        QuaternionTrack track = result[i][nodeId].GetRotation();
+                        TrackFromChannel(ref track, gltf, channel, animation, channel.Target.Path);
+                    }
+
+                }
+
+                result[i].RecalculateDuration();
+            }
+
+            return result;
+        }
+
+        public static void TrackFromChannel(ref VectorTrack inOutTrack, TInput gltf, AnimationChannel inChannel, glTFLoader.Schema.Animation animation, AnimationChannelTarget.PathEnum path)
+        {
+            Interpolation interpolation = Interpolation.Constant;
+            var sampler = animation.Samplers[inChannel.Sampler];
+            if (sampler.Interpolation == AnimationSampler.InterpolationEnum.LINEAR)
+                interpolation = Interpolation.Linear;
+            else if (sampler.Interpolation == AnimationSampler.InterpolationEnum.CUBICSPLINE)
+                interpolation = Interpolation.Cubic;
+
+            bool isSampleCubic = interpolation == Interpolation.Cubic;
+            inOutTrack.SetInterpolation(interpolation);
+
+            float[] timelineFloats = new float[animation.Samplers.Length];
+
+            for (int i = 0; i < animation.Samplers.Length; i++)
+            {
+                int input = animation.Samplers[i].Input;
+                int output = animation.Samplers[i].Output;
+
+                if (inChannel.Target.Path == path)
+                {
+                    for(int j = 0; j < gltf.Accessors.Length; j++)
+                    {
+                        if (gltf.Accessors[j].BufferView == output && gltf.Accessors[j].Type == Accessor.TypeEnum.VEC3)
+                        {
+                            int bufferIndex = (int)gltf.Accessors[j].BufferView;
+                            var bufferView = gltf.BufferViews[bufferIndex];
+                            byte[] uriBytes = Convert.FromBase64String(gltf.Buffers[bufferView.Buffer].Uri.Replace("data:application/octet-stream;base64,", ""));
+
+                            int frameCount = 0;
+
+                            for (int n = bufferView.ByteOffset; n < bufferView.ByteOffset + bufferView.ByteLength; n += 4)
+                            {
+                                float x = BitConverter.ToSingle(uriBytes, n);
+                                n += 4;
+                                float y = BitConverter.ToSingle(uriBytes, n);
+                                n += 4;
+                                float z = BitConverter.ToSingle(uriBytes, n);
+
+                                inOutTrack[frameCount].mValue = new float[3] {x,y,z};
+                                frameCount++;
+                            }
+
+                            j = gltf.Accessors.Length;
+                        }
+                    }
+                }
+                
+            }
+            
+            float[] valuesFloats = new float[sampler.Input * 3];
+        }
+
+        public static void TrackFromChannel(ref QuaternionTrack inOutTrack, TInput gltf, AnimationChannel inChannel, glTFLoader.Schema.Animation animation, AnimationChannelTarget.PathEnum path)
+        {
+            Interpolation interpolation = Interpolation.Constant;
+            var sampler = animation.Samplers[inChannel.Sampler];
+            if (sampler.Interpolation == AnimationSampler.InterpolationEnum.LINEAR)
+                interpolation = Interpolation.Linear;
+            else if (sampler.Interpolation == AnimationSampler.InterpolationEnum.CUBICSPLINE)
+                interpolation = Interpolation.Cubic;
+
+            bool isSampleCubic = interpolation == Interpolation.Cubic;
+            inOutTrack.SetInterpolation(interpolation);
+
+            float[] timelineFloats = new float[animation.Samplers.Length];
+
+            for (int i = 0; i < animation.Samplers.Length; i++)
+            {
+                int input = animation.Samplers[i].Input;
+                int output = animation.Samplers[i].Output;
+
+                if (inChannel.Target.Path == path)
+                {
+                    for (int j = 0; j < gltf.Accessors.Length; j++)
+                    {
+                        if (gltf.Accessors[j].BufferView == output && gltf.Accessors[j].Type == Accessor.TypeEnum.VEC4)
+                        {
+                            int bufferIndex = (int)gltf.Accessors[j].BufferView;
+                            var bufferView = gltf.BufferViews[bufferIndex];
+                            byte[] uriBytes = Convert.FromBase64String(gltf.Buffers[bufferView.Buffer].Uri.Replace("data:application/octet-stream;base64,", ""));
+
+                            int frameCount = 0;
+
+                            for (int n = bufferView.ByteOffset; n < bufferView.ByteOffset + bufferView.ByteLength; n += 4)
+                            {
+                                float x = BitConverter.ToSingle(uriBytes, n);
+                                n += 4;
+                                float y = BitConverter.ToSingle(uriBytes, n);
+                                n += 4;
+                                float z = BitConverter.ToSingle(uriBytes, n);
+                                n += 4;
+                                float w = BitConverter.ToSingle(uriBytes, n);
+
+                                inOutTrack[frameCount].mValue = new float[4] { x, y, z, w };
+                                frameCount++;
+                            }
+
+                            j = gltf.Accessors.Length;
+                        }
+                    }
+                }
+
+            }
+
+            float[] valuesFloats = new float[sampler.Input * 3];
         }
 
         public static void ValidateFile(glTFLoader.Schema.Gltf gltf)

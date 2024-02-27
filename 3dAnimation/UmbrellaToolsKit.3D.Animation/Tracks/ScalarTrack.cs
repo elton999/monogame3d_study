@@ -2,7 +2,16 @@
 {
     public class ScalarTrack : Track<float>
     {
-     
+        public override Frame this[int index]
+        {
+            get
+            {
+                if (mFrames[index] == null)
+                    mFrames[index] = new ScalarFrame();
+                return mFrames[index];
+            }
+        }
+
         protected override float Cast(float[] value) => value[0];
 
         protected override float Hermite(float t, float p1, float s1, float _p2, float s2)
@@ -25,7 +34,7 @@
         protected override float SampleCubic(float time, bool looping)
         {
             int thisFrame = FrameIndex(time, looping);
-            if (thisFrame < 0 || thisFrame >= (int)(mFrames.Count - 1))
+            if (thisFrame < 0 || thisFrame >= (int)(mFrames.Length - 1))
                 return 0.0f;
 
             int nextFrame = thisFrame + 1;
@@ -51,7 +60,7 @@
         protected override float SampleLinear(float time, bool looping)
         {
             int thisFrame = FrameIndex(time, looping);
-            if (thisFrame < 0 || thisFrame >= (int)(mFrames.Count - 1))
+            if (thisFrame < 0 || thisFrame >= (int)(mFrames.Length - 1))
                 return 0.0f;
 
             int nextFrame = thisFrame + 1;
