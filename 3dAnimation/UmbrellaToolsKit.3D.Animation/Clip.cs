@@ -5,11 +5,11 @@ namespace UmbrellaToolsKit.Animation3D
 {
     public class Clip
     {
-        protected List<TransformTrack> mTracks;
-        protected string mName;
-        protected float mStartTime;
-        protected float mEndTime;
-        protected bool mLooping;
+        public List<TransformTrack> mTracks;
+        public string mName;
+        public float mStartTime;
+        public float mEndTime;
+        public bool mLooping;
 
         public Clip() 
         {
