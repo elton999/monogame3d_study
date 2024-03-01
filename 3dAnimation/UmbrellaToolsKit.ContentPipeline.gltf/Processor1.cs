@@ -40,7 +40,7 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
                    
                     int bufferIndex = accessor.BufferView.Value;
                     var bufferView = gltf.BufferViews[bufferIndex];
-                    byte[] uriBytes = Convert.FromBase64String(gltf.Buffers[bufferView.Buffer].Uri.Replace("data:application/octet-stream;base64,", ""));
+                    uriBytes = Convert.FromBase64String(gltf.Buffers[bufferView.Buffer].Uri.Replace("data:application/octet-stream;base64,", ""));
 
                     // vertices
                     if (attributes[i].Attributes["POSITION"] == j && accessor.Type == glTFLoader.Schema.Accessor.TypeEnum.VEC3)
@@ -99,32 +99,10 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
                 }
             }
 
-            foreach(var node in gltf.Nodes)
-            {
-                var vector = new Vector3(node.Translation[0], node.Translation[1], node.Translation[2]);
-                var quat = new Quaternion(node.Rotation[0], node.Rotation[1], node.Rotation[2], node.Rotation[3]);
-                var scale = new Vector3(node.Scale[0], node.Scale[1], node.Scale[2]);
-                var joint = new Joint(node.Name, new Transform(vector, quat, scale));
-                joints.Add(joint);  
-            }
-
-
-            for (int i = 0; i < gltf.Nodes.Length; ++i)
-            {
-                var node = gltf.Nodes[i];
-                
-                if (node.Children != null && node.Children.Length > 0)
-                {
-                    foreach (var child in node.Children)
-                        joints[child].Parent.Add(joints[i]);
-                }
-            }
-
             meshR.Vertices = vertices.ToArray();
             meshR.Normals = normals.ToArray();
             meshR.Indices = indices.ToArray();
             meshR.TexCoords = texCoords.ToArray();
-            meshR.Joints = joints.ToArray();
             meshR.Clips = LoadAnimationClips(gltf);
             meshR.RestPose = new Pose[1] { LoadRestPose(gltf) };
             meshR.CurrentPose = meshR.RestPose;
@@ -193,8 +171,8 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
                 result[i] = new Clip();
                 result[i].SetName(gltf.Animations[i].Name);
                 var animation = gltf.Animations[i];
-
                 int numChannels = gltf.Animations[i].Channels.Length;
+
                 for (int j = 0; j < numChannels; ++j)
                 {
                     var channel = gltf.Animations[i].Channels[j];
@@ -214,7 +192,7 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
                     else if(channel.Target.Path == AnimationChannelTarget.PathEnum.rotation)
                     {
                         QuaternionTrack track = result[i][nodeId].GetRotation();
-                        TrackFromChannel(ref track, gltf, channel, animation, channel.Target.Path);
+                        //TrackFromChannel(ref track, gltf, channel, animation, channel.Target.Path);
                     }
 
                 }
@@ -225,6 +203,7 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
             return result;
         }
 
+        public static byte[] uriBytes;
         public static void TrackFromChannel(ref VectorTrack inOutTrack, TInput gltf, AnimationChannel inChannel, glTFLoader.Schema.Animation animation, AnimationChannelTarget.PathEnum path)
         {
             Interpolation interpolation = Interpolation.Constant;
@@ -237,7 +216,12 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
             bool isSampleCubic = interpolation == Interpolation.Cubic;
             inOutTrack.SetInterpolation(interpolation);
 
-            float[] timelineFloats = new float[animation.Samplers.Length];
+            List<float> timelineFloats = new List<float>();
+            List<float> valuesFloats = new List<float>();
+            List<int> ids = new List<int>();
+
+            inOutTrack.Resize(gltf.Accessors[sampler.Input].Count);
+            Console.WriteLine(gltf.Accessors[sampler.Input].Count);
 
             for (int i = 0; i < animation.Samplers.Length; i++)
             {
@@ -248,15 +232,19 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
                 {
                     for(int j = 0; j < gltf.Accessors.Length; j++)
                     {
-                        if (gltf.Accessors[j].BufferView == output && gltf.Accessors[j].Type == Accessor.TypeEnum.VEC3)
-                        {
-                            int bufferIndex = (int)gltf.Accessors[j].BufferView;
+                        var acessor = gltf.Accessors[j];
+                        int bufferIndex = (int)acessor.BufferView;
+                        if (bufferIndex == output && acessor.Type == Accessor.TypeEnum.VEC3 && !ids.Contains(j))
+                        {;
                             var bufferView = gltf.BufferViews[bufferIndex];
-                            byte[] uriBytes = Convert.FromBase64String(gltf.Buffers[bufferView.Buffer].Uri.Replace("data:application/octet-stream;base64,", ""));
+                            //byte[] uriBytes = Convert.FromBase64String(gltf.Buffers[bufferView.Buffer].Uri.Replace("data:application/octet-stream;base64,", ""));
 
                             int frameCount = 0;
+                            int byteOffset = bufferView.ByteOffset;
+                            int byteTotal = byteOffset + bufferView.ByteLength;
+                            ids.Add(j);
 
-                            for (int n = bufferView.ByteOffset; n < bufferView.ByteOffset + bufferView.ByteLength; n += 4)
+                            for (int n = byteOffset; n < byteTotal; n += 4)
                             {
                                 float x = BitConverter.ToSingle(uriBytes, n);
                                 n += 4;
@@ -265,6 +253,7 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
                                 float z = BitConverter.ToSingle(uriBytes, n);
 
                                 inOutTrack[frameCount].mValue = new float[3] {x,y,z};
+                                valuesFloats.AddRange(inOutTrack[frameCount].mValue);
                                 frameCount++;
                             }
 
@@ -274,8 +263,6 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
                 }
                 
             }
-            
-            float[] valuesFloats = new float[sampler.Input * 3];
         }
 
         public static void TrackFromChannel(ref QuaternionTrack inOutTrack, TInput gltf, AnimationChannel inChannel, glTFLoader.Schema.Animation animation, AnimationChannelTarget.PathEnum path)

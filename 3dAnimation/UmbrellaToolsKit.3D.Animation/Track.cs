@@ -4,15 +4,13 @@ namespace UmbrellaToolsKit.Animation3D
 {
     public abstract class Track<T>
     {
-        public Frame[] mFrames = new Frame[300];
+        public Frame[] mFrames;
         public Interpolation mInterpolation;
 
         public Frame[] Frame 
         {
             get
             {
-                if(mFrames == null)
-                    mFrames = new Frame[1];
                 return mFrames;
             }
         }
@@ -20,12 +18,11 @@ namespace UmbrellaToolsKit.Animation3D
         public Track()
         {
             mInterpolation = Interpolation.Linear;
-            mFrames = new Frame[300];
         }
 
         public abstract Frame this[int index] { get; }
 
-        public int Size() => Frame.Length;
+        public int Size() => Frame != null ? Frame.Length : 0;
 
         public void Resize(int value) => mFrames = new Frame[value];
 
