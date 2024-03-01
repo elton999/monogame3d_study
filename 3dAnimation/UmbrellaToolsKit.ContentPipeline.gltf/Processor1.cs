@@ -20,6 +20,7 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
             return mesh;
         }
 
+        private static byte[][] uriBytesList;
         public TOutput LoadMesh(TInput gltf)
         {
             var meshR = new TOutput();
@@ -28,8 +29,12 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
             var texCoords = new List<Vector2>();
             var indices = new List<short>();
             var joints = new List<Joint>();
-            
-            for(int i = 0; i < gltf.Meshes.Length; i++)
+
+            uriBytesList = new byte[gltf.Buffers.Length][];
+            for(int i = 0; i < uriBytesList.Length; i++)
+                uriBytesList[i] = Convert.FromBase64String(gltf.Buffers[i].Uri.Replace("data:application/octet-stream;base64,", ""));
+
+            for (int i = 0; i < gltf.Meshes.Length; i++)
             {
                 var attributes = gltf.Meshes[i].Primitives;
                 int accessorLenght = gltf.Accessors.Length;
@@ -40,7 +45,7 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
                    
                     int bufferIndex = accessor.BufferView.Value;
                     var bufferView = gltf.BufferViews[bufferIndex];
-                    uriBytes = Convert.FromBase64String(gltf.Buffers[bufferView.Buffer].Uri.Replace("data:application/octet-stream;base64,", ""));
+                    byte[] uriBytes = uriBytesList[bufferView.Buffer];
 
                     // vertices
                     if (attributes[i].Attributes["POSITION"] == j && accessor.Type == glTFLoader.Schema.Accessor.TypeEnum.VEC3)
@@ -203,7 +208,6 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
             return result;
         }
 
-        public static byte[] uriBytes;
         public static void TrackFromChannel(ref VectorTrack inOutTrack, TInput gltf, AnimationChannel inChannel, glTFLoader.Schema.Animation animation, AnimationChannelTarget.PathEnum path)
         {
             Interpolation interpolation = Interpolation.Constant;
@@ -237,7 +241,7 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
                         if (bufferIndex == output && acessor.Type == Accessor.TypeEnum.VEC3 && !ids.Contains(j))
                         {;
                             var bufferView = gltf.BufferViews[bufferIndex];
-                            //byte[] uriBytes = Convert.FromBase64String(gltf.Buffers[bufferView.Buffer].Uri.Replace("data:application/octet-stream;base64,", ""));
+                            byte[] uriBytes = uriBytesList[bufferView.Buffer];
 
                             int frameCount = 0;
                             int byteOffset = bufferView.ByteOffset;
