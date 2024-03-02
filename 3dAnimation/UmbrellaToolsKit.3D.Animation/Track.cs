@@ -81,7 +81,7 @@ namespace UmbrellaToolsKit.Animation3D
 
         protected int FrameIndex(float time, bool looping)
         {
-            int size = mFrames.Length;
+            int size = Size();
             if (size <= 1) return -1;
 
             if (looping)

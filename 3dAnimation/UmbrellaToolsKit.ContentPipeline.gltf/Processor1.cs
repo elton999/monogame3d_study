@@ -216,54 +216,92 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
             else if (sampler.Interpolation == AnimationSampler.InterpolationEnum.CUBICSPLINE)
                 interpolation = Interpolation.Cubic;
 
-            bool isSampleCubic = interpolation == Interpolation.Cubic;
+            bool isSamplerCubic = interpolation == Interpolation.Cubic;
             inOutTrack.SetInterpolation(interpolation);
 
             List<float> timelineFloats = new List<float>();
             List<float> valuesFloats = new List<float>();
-            List<int> ids = new List<int>();
+            int numFrames = gltf.Accessors[sampler.Input].Count;
 
-            inOutTrack.Resize(gltf.Accessors[sampler.Input].Count);
+            inOutTrack.Resize(numFrames);
 
-            for (int i = 0; i < animation.Samplers.Length; i++)
+            int input = sampler.Input;
+            int output = sampler.Output;
+
+            if (inChannel.Target.Path == path)
             {
-                int input = animation.Samplers[i].Input;
-                int output = animation.Samplers[i].Output;
-
-                if (inChannel.Target.Path == path)
+                for(int j = 0; j < gltf.Accessors.Length; j++)
                 {
-                    for(int j = 0; j < gltf.Accessors.Length; j++)
+                    var acessor = gltf.Accessors[j];
+                    int bufferIndex = (int)acessor.BufferView;
+
+                    if (bufferIndex == output && acessor.Type == Accessor.TypeEnum.VEC3)
                     {
-                        var acessor = gltf.Accessors[j];
-                        int bufferIndex = (int)acessor.BufferView;
-                        if (bufferIndex == output && acessor.Type == Accessor.TypeEnum.VEC3 && !ids.Contains(j))
+                        var bufferView = gltf.BufferViews[bufferIndex];
+                        byte[] uriBytes = uriBytesList[bufferView.Buffer];
+
+                        int frameCount = 0;
+                        int byteOffset = bufferView.ByteOffset;
+                        int byteTotal = byteOffset + bufferView.ByteLength;
+
+                        for (int n = byteOffset; n < byteTotal; n += 4)
                         {
-                            var bufferView = gltf.BufferViews[bufferIndex];
-                            byte[] uriBytes = uriBytesList[bufferView.Buffer];
+                            float x = BitConverter.ToSingle(uriBytes, n);
+                            n += 4;
+                            float y = BitConverter.ToSingle(uriBytes, n);
+                            n += 4;
+                            float z = BitConverter.ToSingle(uriBytes, n);
 
-                            int frameCount = 0;
-                            int byteOffset = bufferView.ByteOffset;
-                            int byteTotal = byteOffset + bufferView.ByteLength;
-                            ids.Add(j);
-
-                            for (int n = byteOffset; n < byteTotal; n += 4)
-                            {
-                                float x = BitConverter.ToSingle(uriBytes, n);
-                                n += 4;
-                                float y = BitConverter.ToSingle(uriBytes, n);
-                                n += 4;
-                                float z = BitConverter.ToSingle(uriBytes, n);
-
-                                inOutTrack[frameCount].mValue = new float[3] {x,y,z};
-                                valuesFloats.AddRange(inOutTrack[frameCount].mValue);
-                                frameCount++;
-                            }
-
-                            j = gltf.Accessors.Length;
+                            inOutTrack[frameCount].mValue = new float[3] {x,y,z};
+                            valuesFloats.AddRange(inOutTrack[frameCount].mValue);
+                            frameCount++;
                         }
-                    }
+                    } // floats output
+
+                    if(bufferIndex == input && acessor.Type == Accessor.TypeEnum.SCALAR)
+                    {
+                        var bufferView = gltf.BufferViews[bufferIndex];
+                        byte[] uriBytes = uriBytesList[bufferView.Buffer];
+
+                        int frameCount = 0;
+                        int byteOffset = bufferView.ByteOffset;
+                        int byteTotal = byteOffset + bufferView.ByteLength;
+
+                        for (int n = byteOffset; n < byteTotal; n += 4)
+                        {
+                            float x = BitConverter.ToSingle(uriBytes, n);
+
+                            timelineFloats.Add(x);
+                            frameCount++;
+                        }
+                    } // time input
+
                 }
-                
+            }
+
+            int numberOfValuesPerFrame = valuesFloats.Count / timelineFloats.Count;
+            for(int i = 0; i < numFrames; i++)
+            {
+                int baseIndex = i * numberOfValuesPerFrame;
+                var frame = inOutTrack[i];
+                int offset = 0;
+
+                frame.mTime = timelineFloats[i];
+
+                for (int component = 0; component < 3; ++component)
+                {
+                    frame.mIn[component] = isSamplerCubic ? valuesFloats[baseIndex + offset++] : 0.0f;
+                }
+
+                for (int component = 0; component < 3; ++component)
+                {
+                    frame.mValue[component] = valuesFloats[baseIndex + offset++];
+                }
+
+                for (int component = 0; component < 3; ++component)
+                {
+                    frame.mOut[component] = isSamplerCubic ? valuesFloats[baseIndex + offset++] : 0.0f;
+                }
             }
         }
 
@@ -276,56 +314,94 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
             else if (sampler.Interpolation == AnimationSampler.InterpolationEnum.CUBICSPLINE)
                 interpolation = Interpolation.Cubic;
 
-            bool isSampleCubic = interpolation == Interpolation.Cubic;
+            bool isSamplerCubic = interpolation == Interpolation.Cubic;
             inOutTrack.SetInterpolation(interpolation);
 
             List<float> timelineFloats = new List<float>();
             List<float> valuesFloats = new List<float>();
-            List<int> ids = new List<int>();
+            int numFrames = gltf.Accessors[sampler.Input].Count;
 
-            inOutTrack.Resize(gltf.Accessors[sampler.Input].Count);
+            inOutTrack.Resize(numFrames);
 
-            for (int i = 0; i < animation.Samplers.Length; i++)
+            int input = sampler.Input;
+            int output = sampler.Output;
+
+            if (inChannel.Target.Path == path)
             {
-                int input = animation.Samplers[i].Input;
-                int output = animation.Samplers[i].Output;
-
-                if (inChannel.Target.Path == path)
+                for (int j = 0; j < gltf.Accessors.Length; j++)
                 {
-                    for (int j = 0; j < gltf.Accessors.Length; j++)
+                    var acessor = gltf.Accessors[j];
+                    int bufferIndex = (int)acessor.BufferView;
+
+                    if (bufferIndex == output && acessor.Type == Accessor.TypeEnum.VEC4)
                     {
-                        var acessor = gltf.Accessors[j];
-                        int bufferIndex = (int)acessor.BufferView;
-                        if (bufferIndex == output && acessor.Type == Accessor.TypeEnum.VEC4 && !ids.Contains(j))
+                        var bufferView = gltf.BufferViews[bufferIndex];
+                        byte[] uriBytes = uriBytesList[bufferView.Buffer];
+
+                        int frameCount = 0;
+                        int byteOffset = bufferView.ByteOffset;
+                        int byteTotal = byteOffset + bufferView.ByteLength;
+
+                        for (int n = byteOffset; n < byteTotal; n += 4)
                         {
-                            var bufferView = gltf.BufferViews[bufferIndex];
-                            byte[] uriBytes = uriBytesList[bufferView.Buffer];
+                            float x = BitConverter.ToSingle(uriBytes, n);
+                            n += 4;
+                            float y = BitConverter.ToSingle(uriBytes, n);
+                            n += 4;
+                            float z = BitConverter.ToSingle(uriBytes, n);
+                            n += 4;
+                            float w = BitConverter.ToSingle(uriBytes, n);
 
-                            int frameCount = 0;
-                            int byteOffset = bufferView.ByteOffset;
-                            int byteTotal = byteOffset + bufferView.ByteLength;
-                            ids.Add(j);
-
-                            for (int n = byteOffset; n < byteTotal; n += 4)
-                            {
-                                float x = BitConverter.ToSingle(uriBytes, n);
-                                n += 4;
-                                float y = BitConverter.ToSingle(uriBytes, n);
-                                n += 4;
-                                float z = BitConverter.ToSingle(uriBytes, n);
-                                n += 4;
-                                float w = BitConverter.ToSingle(uriBytes, n);
-
-                                inOutTrack[frameCount].mValue = new float[4] { x, y, z, w };
-                                valuesFloats.AddRange(inOutTrack[frameCount].mValue);
-                                frameCount++;
-                            }
-
-                            j = gltf.Accessors.Length;
+                            inOutTrack[frameCount].mValue = new float[4] { x, y, z, w };
+                            valuesFloats.AddRange(inOutTrack[frameCount].mValue);
+                            frameCount++;
                         }
-                    }
+                    } // floats output
+
+                    if (bufferIndex == input && acessor.Type == Accessor.TypeEnum.SCALAR)
+                    {
+                        var bufferView = gltf.BufferViews[bufferIndex];
+                        byte[] uriBytes = uriBytesList[bufferView.Buffer];
+
+                        int frameCount = 0;
+                        int byteOffset = bufferView.ByteOffset;
+                        int byteTotal = byteOffset + bufferView.ByteLength;
+
+                        for (int n = byteOffset; n < byteTotal; n += 4)
+                        {
+                            float x = BitConverter.ToSingle(uriBytes, n);
+
+                            timelineFloats.Add(x);
+                            frameCount++;
+                        }
+                    } // time input
+
+                }
+            }
+
+            int numberOfValuesPerFrame = valuesFloats.Count / timelineFloats.Count;
+            for (int i = 0; i < numFrames; i++)
+            {
+                int baseIndex = i * numberOfValuesPerFrame;
+                var frame = inOutTrack[i];
+                int offset = 0;
+
+                frame.mTime = timelineFloats[i];
+
+                for (int component = 0; component < 4; ++component)
+                {
+                    frame.mIn[component] = isSamplerCubic ? valuesFloats[baseIndex + offset++] : 0.0f;
                 }
 
+                for (int component = 0; component < 4; ++component)
+                {
+                    frame.mValue[component] = valuesFloats[baseIndex + offset++];
+                }
+
+                for (int component = 0; component < 4; ++component)
+                {
+                    frame.mOut[component] = isSamplerCubic ? valuesFloats[baseIndex + offset++] : 0.0f;
+                }
             }
         }
 

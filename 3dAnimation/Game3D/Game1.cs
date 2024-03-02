@@ -95,7 +95,8 @@ namespace Game3D
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
 
-            playbackTime = mesh.Clips[currentClip].Sample(restPose, playbackTime + (float)gameTime.ElapsedGameTime.Milliseconds);
+            mesh.Clips[0].SetLooping(true);
+            playbackTime = mesh.Clips[9].Sample(restPose, playbackTime + (float)gameTime.ElapsedGameTime.TotalSeconds);
 
             base.Update(gameTime);
         }
@@ -122,21 +123,6 @@ namespace Game3D
             model.SetWorld(world * Matrix.CreateRotationY(MathHelper.ToRadians(angle)));
             model.Draw(GraphicsDevice, projection, view);
 
-
-            /*foreach (var joint in mesh.Joints)
-            {
-                if (joint.Parent.Count > 0)
-                {
-                    foreach(var parent in joint.Parent)
-                    {
-                        Line line = new Line(GetGlobalTransform(parent).Position, GetGlobalTransform(joint).Position, GraphicsDevice, Color.Red);
-                        line.SetWorld(world * Matrix.CreateRotationY(MathHelper.ToRadians(angle)));
-                        line.Draw(GraphicsDevice, projection, view);
-                    }
-                }
-            }*/
-
-            Console.WriteLine(restPose.Size());
             for(int i = 0; i < restPose.Size(); i++)
             {
                 int parentIndex = restPose.GetParent(i);
@@ -151,37 +137,6 @@ namespace Game3D
             }
 
             base.Draw(gameTime);
-        }
-
-        private Transform GetGlobalTransform(Joint joint)
-        {
-            if (joint.Parent.Count == 0)
-                return joint.Transform;
-
-            List<Transform> AllTransforms = new List<Transform>();
-
-            foreach(var jointParent1 in joint.Parent)
-            {
-                Joint jointParent = jointParent1;
-                AllTransforms.Add(jointParent1.Transform);
-                while (jointParent.Parent.Count != 0)
-                {
-                    foreach (var currentTransform in jointParent.Parent)
-                    {
-                        jointParent = currentTransform;
-                        AllTransforms.Add(jointParent.Transform);
-                    }
-                }
-            }
-            
-            Transform result = joint.Transform;
-
-            for (int i = 0; i < AllTransforms.Count; ++i)
-            {
-                Transform transform = AllTransforms[i];
-                result = Transform.Combine(transform, result);
-            }
-            return result;
         }
     }
 }
