@@ -9,7 +9,7 @@ namespace UmbrellaToolsKit.Animation3D
         public string mName;
         public float mStartTime;
         public float mEndTime;
-        public bool mLooping;
+        public bool mLooping = true;
 
         public Clip() 
         {
@@ -20,18 +20,20 @@ namespace UmbrellaToolsKit.Animation3D
             mTracks = new List<TransformTrack>();
         }
 
-        protected float AdjustTimeToFitRange(float inTime)
+        public float AdjustTimeToFitRange(float inTime)
         {
             if (mLooping)
             {
                 float duration = mEndTime - mStartTime;
-                inTime = inTime - mStartTime % mEndTime - mStartTime;
-
+                if (duration <= 0)
+                {
+                    return 0.0f;
+                }
+                inTime = (inTime - mStartTime) % (mEndTime - mStartTime);
                 if (inTime < 0.0f)
                 {
                     inTime += mEndTime - mStartTime;
                 }
-
                 inTime = inTime + mStartTime;
             }
             else
@@ -45,7 +47,6 @@ namespace UmbrellaToolsKit.Animation3D
                     inTime = mEndTime;
                 }
             }
-
             return inTime;
         }
 

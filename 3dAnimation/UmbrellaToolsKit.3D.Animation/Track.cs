@@ -63,7 +63,7 @@ namespace UmbrellaToolsKit.Animation3D
             if (duration <= 0.0f) { return 0.0f; }
             if (looping)
             {
-                time = time - startTime % endTime - startTime;
+                time = (time - startTime) % (endTime - startTime);
                 if (time < 0.0f)
                 {
                     time += endTime - startTime;
@@ -90,7 +90,7 @@ namespace UmbrellaToolsKit.Animation3D
                 float endTime = mFrames[size - 1].mTime;
                 float duration = endTime - startTime;
 
-                time = time - startTime % endTime - startTime;
+                time = (time - startTime) % (endTime - startTime);
                 if (time < 0.0f)
                 {
                     time += endTime - startTime;
