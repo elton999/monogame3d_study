@@ -112,7 +112,6 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
             meshR.RestPose = new Pose[1] { LoadRestPose(gltf) };
             meshR.CurrentPose = meshR.RestPose;
 
-            Console.WriteLine($"joins---->: {meshR.RestPose[0].Size()}");
             return meshR;
         }
 
@@ -197,7 +196,7 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
                     else if(channel.Target.Path == AnimationChannelTarget.PathEnum.rotation)
                     {
                         QuaternionTrack track = result[i][nodeId].GetRotation();
-                        //TrackFromChannel(ref track, gltf, channel, animation, channel.Target.Path);
+                        TrackFromChannel(ref track, gltf, channel, animation, channel.Target.Path);
                     }
 
                 }
@@ -225,7 +224,6 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
             List<int> ids = new List<int>();
 
             inOutTrack.Resize(gltf.Accessors[sampler.Input].Count);
-            Console.WriteLine(gltf.Accessors[sampler.Input].Count);
 
             for (int i = 0; i < animation.Samplers.Length; i++)
             {
@@ -239,7 +237,7 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
                         var acessor = gltf.Accessors[j];
                         int bufferIndex = (int)acessor.BufferView;
                         if (bufferIndex == output && acessor.Type == Accessor.TypeEnum.VEC3 && !ids.Contains(j))
-                        {;
+                        {
                             var bufferView = gltf.BufferViews[bufferIndex];
                             byte[] uriBytes = uriBytesList[bufferView.Buffer];
 
@@ -281,7 +279,11 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
             bool isSampleCubic = interpolation == Interpolation.Cubic;
             inOutTrack.SetInterpolation(interpolation);
 
-            float[] timelineFloats = new float[animation.Samplers.Length];
+            List<float> timelineFloats = new List<float>();
+            List<float> valuesFloats = new List<float>();
+            List<int> ids = new List<int>();
+
+            inOutTrack.Resize(gltf.Accessors[sampler.Input].Count);
 
             for (int i = 0; i < animation.Samplers.Length; i++)
             {
@@ -292,15 +294,19 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
                 {
                     for (int j = 0; j < gltf.Accessors.Length; j++)
                     {
-                        if (gltf.Accessors[j].BufferView == output && gltf.Accessors[j].Type == Accessor.TypeEnum.VEC4)
+                        var acessor = gltf.Accessors[j];
+                        int bufferIndex = (int)acessor.BufferView;
+                        if (bufferIndex == output && acessor.Type == Accessor.TypeEnum.VEC4 && !ids.Contains(j))
                         {
-                            int bufferIndex = (int)gltf.Accessors[j].BufferView;
                             var bufferView = gltf.BufferViews[bufferIndex];
-                            byte[] uriBytes = Convert.FromBase64String(gltf.Buffers[bufferView.Buffer].Uri.Replace("data:application/octet-stream;base64,", ""));
+                            byte[] uriBytes = uriBytesList[bufferView.Buffer];
 
                             int frameCount = 0;
+                            int byteOffset = bufferView.ByteOffset;
+                            int byteTotal = byteOffset + bufferView.ByteLength;
+                            ids.Add(j);
 
-                            for (int n = bufferView.ByteOffset; n < bufferView.ByteOffset + bufferView.ByteLength; n += 4)
+                            for (int n = byteOffset; n < byteTotal; n += 4)
                             {
                                 float x = BitConverter.ToSingle(uriBytes, n);
                                 n += 4;
@@ -311,6 +317,7 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
                                 float w = BitConverter.ToSingle(uriBytes, n);
 
                                 inOutTrack[frameCount].mValue = new float[4] { x, y, z, w };
+                                valuesFloats.AddRange(inOutTrack[frameCount].mValue);
                                 frameCount++;
                             }
 
@@ -320,8 +327,6 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
                 }
 
             }
-
-            float[] valuesFloats = new float[sampler.Input * 3];
         }
 
         public static void ValidateFile(glTFLoader.Schema.Gltf gltf)

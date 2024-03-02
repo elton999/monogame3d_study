@@ -4,10 +4,10 @@ namespace UmbrellaToolsKit.Animation3D
 {
     public class TransformTrack
     {
-        protected int mId;
-        protected VectorTrack mPosition;
-        protected QuaternionTrack mRotation;
-        protected VectorTrack mScale;
+        public int mId;
+        public VectorTrack mPosition;
+        public QuaternionTrack mRotation;
+        public VectorTrack mScale;
 
         public TransformTrack()
         {
