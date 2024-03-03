@@ -36,6 +36,15 @@ namespace Game3D
         Pose restPose;
         float playbackTime;
         int currentClip;
+        int CurrentClip
+        {
+            get
+            {
+                if (currentClip > 0)
+                    return (currentClip % (mesh.Clips.Length - 1));
+                return currentClip;
+            }
+        }
 
         public Game1()
         {
@@ -86,6 +95,8 @@ namespace Game3D
         }
 
         bool init = true;
+        bool buttonUpPressed = false;
+        bool buttonDownPressed = false;
         protected override void Update(GameTime gameTime)
         {
             if(init)
@@ -96,7 +107,25 @@ namespace Game3D
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
 
-            playbackTime = mesh.Clips[currentClip].Sample(restPose, playbackTime + (float)gameTime.ElapsedGameTime.TotalSeconds);
+            if(!buttonUpPressed && Keyboard.GetState().IsKeyDown(Keys.Up))
+            {
+                buttonUpPressed = true;
+                currentClip++;
+            }
+
+            if (!buttonDownPressed && Keyboard.GetState().IsKeyDown(Keys.Down))
+            {
+                buttonDownPressed = true;
+                currentClip++;
+            }
+
+            if (Keyboard.GetState().IsKeyUp(Keys.Up))
+                buttonUpPressed = false;
+
+            if (Keyboard.GetState().IsKeyUp(Keys.Down))
+                buttonDownPressed = false;
+
+            playbackTime = mesh.Clips[CurrentClip].Sample(restPose, playbackTime + (float)gameTime.ElapsedGameTime.TotalSeconds);
 
             base.Update(gameTime);
         }
@@ -123,7 +152,8 @@ namespace Game3D
 
             spriteBatch.Begin();
             spriteBatch.DrawString(font, "Use (up, down) to change the animation", Vector2.Zero, Color.White);
-            spriteBatch.DrawString(font, $"Animation: {mesh.Clips[currentClip].mName}", Vector2.UnitY * 15, Color.White);
+            spriteBatch.DrawString(font, $"Animation: {mesh.Clips[CurrentClip].mName}", Vector2.UnitY * 15, Color.White);
+            spriteBatch.DrawString(font, $"FPS: { 1.0f / (float)gameTime.ElapsedGameTime.TotalSeconds}", Vector2.UnitY * 30, Color.White);
             spriteBatch.End();
 
             model.SetWorld(world * Matrix.CreateRotationY(MathHelper.ToRadians(angle)));
