@@ -54,6 +54,7 @@ namespace Game3D
             graphics.PreferredBackBufferHeight = desktop_height;
             graphics.IsFullScreen = false;
             graphics.PreferredDepthStencilFormat = DepthFormat.None;
+            GraphicsDevice.DepthStencilState = DepthStencilState.Default;
             graphics.ApplyChanges();
             Window.Position = new Point(0, 30);
             gpu = GraphicsDevice;
@@ -95,8 +96,7 @@ namespace Game3D
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
 
-            mesh.Clips[0].SetLooping(true);
-            playbackTime = mesh.Clips[9].Sample(restPose, playbackTime + (float)gameTime.ElapsedGameTime.TotalSeconds);
+            playbackTime = mesh.Clips[currentClip].Sample(restPose, playbackTime + (float)gameTime.ElapsedGameTime.TotalSeconds);
 
             base.Update(gameTime);
         }
@@ -118,9 +118,16 @@ namespace Game3D
             if (angle > 360.0f)
                 angle -= 360.0f;
 
+           
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
+            spriteBatch.Begin();
+            spriteBatch.DrawString(font, "Use (up, down) to change the animation", Vector2.Zero, Color.White);
+            spriteBatch.DrawString(font, $"Animation: {mesh.Clips[currentClip].mName}", Vector2.UnitY * 15, Color.White);
+            spriteBatch.End();
+
             model.SetWorld(world * Matrix.CreateRotationY(MathHelper.ToRadians(angle)));
+           
             model.Draw(GraphicsDevice, projection, view);
 
             for(int i = 0; i < restPose.Size(); i++)

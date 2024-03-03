@@ -36,12 +36,14 @@ namespace UmbrellaToolsKit.Animation3D
             basicEffect.Parameters["lightPosition"].SetValue(_lightPosition);
             basicEffect.Parameters["SpriteTexture"].SetValue(_texture);
 
+            graphicsDevice.BlendState = BlendState.Opaque;
+            graphicsDevice.DepthStencilState = DepthStencilState.Default;
+            graphicsDevice.SamplerStates[0] = SamplerState.LinearWrap;
+            graphicsDevice.RasterizerState = RasterizerState.CullNone;
+            
             graphicsDevice.SetVertexBuffer(_vertexBuffer);
             graphicsDevice.Indices = _indexBuffer;
 
-            RasterizerState rasterizerState = new RasterizerState();
-            rasterizerState.CullMode = CullMode.None;
-            graphicsDevice.RasterizerState = rasterizerState;
 
             foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
             {
