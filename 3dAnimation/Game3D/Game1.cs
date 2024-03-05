@@ -42,7 +42,7 @@ namespace Game3D
             {
                 if (currentClip > 0)
                     return (currentClip % (mesh.Clips.Length - 1));
-                return currentClip;
+                return currentClip = 1;
             }
         }
 
@@ -116,7 +116,7 @@ namespace Game3D
             if (!buttonDownPressed && Keyboard.GetState().IsKeyDown(Keys.Down))
             {
                 buttonDownPressed = true;
-                currentClip++;
+                currentClip--;
             }
 
             if (Keyboard.GetState().IsKeyUp(Keys.Up))
