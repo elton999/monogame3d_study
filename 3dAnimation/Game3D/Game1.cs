@@ -97,6 +97,11 @@ namespace Game3D
         bool init = true;
         bool buttonUpPressed = false;
         bool buttonDownPressed = false;
+        bool buttonLeftPressed = false;
+        bool buttonRightPressed = false;
+        bool buttonF1Pressed = false;
+        int currentBone = 0;
+        bool debugMode = false;
         protected override void Update(GameTime gameTime)
         {
             if(init)
@@ -119,13 +124,43 @@ namespace Game3D
                 currentClip--;
             }
 
+            if (!buttonRightPressed && Keyboard.GetState().IsKeyDown(Keys.Right))
+            {
+                buttonRightPressed = true;
+                currentBone++;
+            }
+
+            if (!buttonLeftPressed && Keyboard.GetState().IsKeyDown(Keys.Left))
+            {
+                buttonLeftPressed = true;
+                currentBone--;
+            }
+
+            if (!buttonF1Pressed && Keyboard.GetState().IsKeyDown(Keys.F1))
+            {
+                buttonF1Pressed = true;
+                debugMode = !debugMode;
+            }
+
+
             if (Keyboard.GetState().IsKeyUp(Keys.Up))
                 buttonUpPressed = false;
 
             if (Keyboard.GetState().IsKeyUp(Keys.Down))
                 buttonDownPressed = false;
 
+            if (Keyboard.GetState().IsKeyUp(Keys.Left))
+                buttonLeftPressed = false;
+
+            if (Keyboard.GetState().IsKeyUp(Keys.Right))
+                buttonRightPressed = false;
+
+            if (Keyboard.GetState().IsKeyUp(Keys.F1))
+                buttonF1Pressed = false;
+
             playbackTime = mesh.Clips[CurrentClip].Sample(restPose, playbackTime + (float)gameTime.ElapsedGameTime.TotalSeconds);
+
+            model.DebugMode(debugMode, currentBone);
 
             base.Update(gameTime);
         }
@@ -153,23 +188,27 @@ namespace Game3D
             spriteBatch.Begin();
             spriteBatch.DrawString(font, "Use (up, down) to change the animation", Vector2.Zero, Color.White);
             spriteBatch.DrawString(font, $"Animation: {mesh.Clips[CurrentClip].mName}", Vector2.UnitY * 15, Color.White);
-            spriteBatch.DrawString(font, $"FPS: { 1.0f / (float)gameTime.ElapsedGameTime.TotalSeconds}", Vector2.UnitY * 30, Color.White);
+            spriteBatch.DrawString(font, $"Debug Mode (Press F1): status: {debugMode} Current Bone: {currentBone} (left, right)", Vector2.UnitY * 30, Color.White);
+            spriteBatch.DrawString(font, $"FPS: {1.0f / (float)gameTime.ElapsedGameTime.TotalSeconds}", Vector2.UnitY * 45, Color.White);
             spriteBatch.End();
 
             model.SetWorld(world * Matrix.CreateRotationY(MathHelper.ToRadians(angle)));
            
             model.Draw(GraphicsDevice, projection, view);
-
-            for(int i = 0; i < restPose.Size(); i++)
+            
+            if(debugMode)
             {
-                int parentIndex = restPose.GetParent(i);
-                if(parentIndex != -1)
+                for(int i = 0; i < restPose.Size(); i++)
                 {
-                    Transform transform = restPose.GetGlobalTransform(i);
-                    Transform transformParent = restPose.GetGlobalTransform(parentIndex);
-                    Line line = new Line(transform.Position, transformParent.Position, GraphicsDevice, Color.Red);
-                    line.SetWorld(world * Matrix.CreateRotationY(MathHelper.ToRadians(angle)));
-                    line.Draw(GraphicsDevice, projection, view);
+                    int parentIndex = restPose.GetParent(i);
+                    if(parentIndex != -1)
+                    {
+                        Transform transform = restPose.GetGlobalTransform(i);
+                        Transform transformParent = restPose.GetGlobalTransform(parentIndex);
+                        Line line = new Line(transform.Position, transformParent.Position, GraphicsDevice, Color.Red);
+                        line.SetWorld(world * Matrix.CreateRotationY(MathHelper.ToRadians(angle)));
+                        line.Draw(GraphicsDevice, projection, view);
+                    }
                 }
             }
 
