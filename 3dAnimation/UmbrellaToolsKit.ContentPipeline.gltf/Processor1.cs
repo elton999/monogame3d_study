@@ -27,8 +27,9 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
             var vertices = new List<Vector3>();
             var normals = new List<Vector3>();
             var texCoords = new List<Vector2>();
+            var weights = new List<Vector4>();
+            var joints =  new List<Vector4>();
             var indices = new List<short>();
-            var joints = new List<Joint>();
 
             uriBytesList = new byte[gltf.Buffers.Length][];
             for(int i = 0; i < uriBytesList.Length; i++)
@@ -92,6 +93,33 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
                         }
                     }
 
+                    //Joints 
+                    if (attributes[i].Attributes.ContainsKey("JOINTS_0") && attributes[i].Attributes["JOINTS_0"] == j && accessor.Type == glTFLoader.Schema.Accessor.TypeEnum.VEC4)
+                    {
+                        for (int n = bufferView.ByteOffset; n < bufferView.ByteOffset + bufferView.ByteLength; n += 4)
+                        {
+                            float x = BitConverter.ToSingle(uriBytes, n);
+                            joints.Add(new Vector4(x,0,0,0));
+                        }
+                    }
+
+                    //Weights 
+                    if (attributes[i].Attributes.ContainsKey("WEIGHTS_0") && attributes[i].Attributes["WEIGHTS_0"] == j && accessor.Type == glTFLoader.Schema.Accessor.TypeEnum.VEC4)
+                    {
+                        for (int n = bufferView.ByteOffset; n < bufferView.ByteOffset + bufferView.ByteLength; n += 4)
+                        {
+                            float x = BitConverter.ToSingle(uriBytes, n);
+                            n += 4;
+                            float y = BitConverter.ToSingle(uriBytes, n);
+                            n += 4;
+                            float z = BitConverter.ToSingle(uriBytes, n);
+                            n += 4;
+                            float w = BitConverter.ToSingle(uriBytes, n);
+
+                            weights.Add(new Vector4(x, y, z, w));
+                        }
+                    }
+
                     // Indicies
                     if (accessor.ComponentType == glTFLoader.Schema.Accessor.ComponentTypeEnum.UNSIGNED_SHORT)
                     {
@@ -108,6 +136,8 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
             meshR.Normals = normals.ToArray();
             meshR.Indices = indices.ToArray();
             meshR.TexCoords = texCoords.ToArray();
+            meshR.Joints = joints.ToArray();
+            meshR.Weights = weights.ToArray();
             meshR.Clips = LoadAnimationClips(gltf);
             meshR.RestPose = new Pose[1] { LoadRestPose(gltf) };
             meshR.CurrentPose = meshR.RestPose;

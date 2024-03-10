@@ -5,10 +5,10 @@ namespace UmbrellaToolsKit.Animation3D
 {
     public class Skeleton
     {
-        protected Pose mRestPose;
-        protected Pose mBindPose;
-        protected List<Matrix> mInvBindPose;
-        protected List<string> mJointNames;
+        public Pose mRestPose;
+        public Pose mBindPose;
+        public List<Matrix> mInvBindPose;
+        public List<string> mJointNames;
 
         public Skeleton() { }
 

@@ -8,10 +8,12 @@ namespace UmbrellaToolsKit.Animation3D
         public Vector3[] Normals;
         public Vector2[] TexCoords;
         public short[] Indices;
-        public Joint[] Joints;
+        public Vector4[] Weights;
+        public Vector4[] Joints;
 
         public Clip[] Clips;
         public Pose[] RestPose;
         public Pose[] CurrentPose;
+        public Skeleton Skeleton;
     }
 }

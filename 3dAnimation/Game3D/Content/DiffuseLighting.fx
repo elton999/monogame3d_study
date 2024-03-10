@@ -25,6 +25,8 @@ struct VertexShaderInput
 	float4 Color : COLOR0;
 	float4 Normal : NORMAL0;
     float2 TextureCoordinates : TEXCOORD0;
+    uint4 Joints : BLENDINDICES0;
+    float4 Weights : BLENDWEIGHT0;
 };
 
 struct VertexShaderOutput
@@ -89,6 +91,9 @@ VertexShaderOutput MainVS(in VertexShaderInput input)
 
 	output.Color = input.Color * (float4(0,0,0,0) + diffusse);
     output.TextureCoordinates = input.TextureCoordinates;
+    
+    if (input.Joints.x == 1)
+        output.Color = float4(1, 0, 0, 1);
 	return output;
 }
 

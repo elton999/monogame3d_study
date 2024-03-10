@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using System;
 
 namespace UmbrellaToolsKit.Animation3D
 {
@@ -44,7 +45,6 @@ namespace UmbrellaToolsKit.Animation3D
             graphicsDevice.SetVertexBuffer(_vertexBuffer);
             graphicsDevice.Indices = _indexBuffer;
 
-
             foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
             {
                 pass.Apply();
@@ -54,13 +54,18 @@ namespace UmbrellaToolsKit.Animation3D
 
         private void LoadModel(GraphicsDevice graphicsDevice)
         {
-            VertexPositionColorNormalTexture[] vertices = new VertexPositionColorNormalTexture[_mesh.Vertices.Length];
+            ModelVertexType[] vertices = new ModelVertexType[_mesh.Vertices.Length];
+            Console.WriteLine($"vertex lenght: {_mesh.Vertices.Length}");
+            Console.WriteLine($"joints lenght: {_mesh.Joints.Length}");
+            Console.WriteLine($"weight lenght: {_mesh.Weights.Length}");
             for (int i = 0; i < _mesh.Vertices.Length; i++)
             {
-                vertices[i] = new VertexPositionColorNormalTexture(_mesh.Vertices[i], Color.White, _mesh.Normals[i], _mesh.TexCoords[i]);
+                vertices[i] = new ModelVertexType(_mesh.Vertices[i], Color.White, _mesh.Normals[i], _mesh.TexCoords[i], _mesh.Joints[i], _mesh.Weights[i]);
+                //Console.WriteLine(vertices[i].ToString());
             }
-            _vertexBuffer = new VertexBuffer(graphicsDevice, typeof(VertexPositionColorNormalTexture), _mesh.Vertices.Length, BufferUsage.WriteOnly);
-            _vertexBuffer.SetData<VertexPositionColorNormalTexture>(vertices);
+
+            _vertexBuffer = new VertexBuffer(graphicsDevice, typeof(ModelVertexType), _mesh.Vertices.Length, BufferUsage.WriteOnly);
+            _vertexBuffer.SetData<ModelVertexType>(vertices);
 
             _indexBuffer = new IndexBuffer(graphicsDevice, typeof(short), _mesh.Indices.Length, BufferUsage.WriteOnly);
             _indexBuffer.SetData(_mesh.Indices);
