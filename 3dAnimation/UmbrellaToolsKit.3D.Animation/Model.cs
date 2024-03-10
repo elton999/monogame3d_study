@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
+using System.Diagnostics;
 
 namespace UmbrellaToolsKit.Animation3D
 {
@@ -17,6 +18,9 @@ namespace UmbrellaToolsKit.Animation3D
         private Effect basicEffect;
         private Vector3 _lightPosition;
 
+        private bool _debugMode = false;
+        private int _currentBone = 0;
+
         public Model(Mesh mesh, GraphicsDevice graphicsDevice)
         {
             _mesh = mesh;
@@ -29,6 +33,12 @@ namespace UmbrellaToolsKit.Animation3D
         public void SetEffect(Effect effect) => basicEffect = effect;
         public void SetTexture(Texture texture) => _texture = texture;
 
+        public void DebugMode(bool status, int bone)
+        {
+            _debugMode= status;
+            _currentBone = bone;
+        }
+
         public void Draw(GraphicsDevice graphicsDevice, Matrix projection, Matrix view)
         {
             basicEffect.Parameters["World"].SetValue(_modelWorld);
@@ -36,6 +46,8 @@ namespace UmbrellaToolsKit.Animation3D
             basicEffect.Parameters["Projection"].SetValue(projection);
             basicEffect.Parameters["lightPosition"].SetValue(_lightPosition);
             basicEffect.Parameters["SpriteTexture"].SetValue(_texture);
+            basicEffect.Parameters["debugMode"].SetValue(_debugMode);
+            basicEffect.Parameters["currentBone"].SetValue(_currentBone);
 
             graphicsDevice.BlendState = BlendState.Opaque;
             graphicsDevice.DepthStencilState = DepthStencilState.Default;

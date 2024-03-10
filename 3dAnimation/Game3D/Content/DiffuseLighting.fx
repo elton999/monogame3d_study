@@ -11,6 +11,8 @@ float4x4 World;
 float4x4 View;
 float4x4 Projection;
 float3 lightPosition;
+bool debugMode;
+uint currentBone;
 
 Texture2D SpriteTexture;
 
@@ -92,8 +94,13 @@ VertexShaderOutput MainVS(in VertexShaderInput input)
 	output.Color = input.Color * (float4(0,0,0,0) + diffusse);
     output.TextureCoordinates = input.TextureCoordinates;
     
-    if (input.Joints.x == 1)
-        output.Color = float4(1, 0, 0, 1);
+    if (debugMode)
+    {
+        if (input.Joints.x == currentBone)
+            output.Color = float4(1, 0, 0, 1) * input.Weights.x;
+        else
+            output.Color = float4(0,0,0,1);
+    }
 	return output;
 }
 
