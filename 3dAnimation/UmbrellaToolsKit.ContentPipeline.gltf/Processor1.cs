@@ -96,10 +96,17 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
                     //Joints 
                     if (attributes[i].Attributes.ContainsKey("JOINTS_0") && attributes[i].Attributes["JOINTS_0"] == j && accessor.Type == glTFLoader.Schema.Accessor.TypeEnum.VEC4)
                     {
-                        for (int n = bufferView.ByteOffset; n < bufferView.ByteOffset + bufferView.ByteLength; n += 4)
+                        for (int n = bufferView.ByteOffset; n < bufferView.ByteOffset + bufferView.ByteLength; n++)
                         {
-                            float x = BitConverter.ToSingle(uriBytes, n);
-                            joints.Add(new Vector4(x,0,0,0));
+                            float x = uriBytes[n];
+                            n++;
+                            float y = uriBytes[n];
+                            n++;
+                            float z = uriBytes[n];
+                            n++;
+                            float w = uriBytes[n];
+
+                            joints.Add(new Vector4(x,y,z,w));
                         }
                     }
 
