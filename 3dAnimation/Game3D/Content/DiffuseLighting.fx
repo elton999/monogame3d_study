@@ -27,7 +27,7 @@ struct VertexShaderInput
 	float4 Color : COLOR0;
 	float4 Normal : NORMAL0;
     float2 TextureCoordinates : TEXCOORD0;
-    uint4 Joints : BLENDINDICES0;
+    uint4  Joints : BLENDINDICES0;
     float4 Weights : BLENDWEIGHT0;
 };
 
@@ -96,7 +96,7 @@ VertexShaderOutput MainVS(in VertexShaderInput input)
     
     if (debugMode)
     {
-        if (input.Joints.x == currentBone)
+        if (input.Joints.x == currentBone || input.Joints.y == currentBone || input.Joints.z == currentBone || input.Joints.w == currentBone)
             output.Color = float4(1, 0, 0, 1) * input.Weights.x;
         else
             output.Color = float4(0,0,0,1);
