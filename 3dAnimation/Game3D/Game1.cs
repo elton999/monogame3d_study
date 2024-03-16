@@ -81,8 +81,9 @@ namespace Game3D
         protected override void LoadContent()
         {
             font = Content.Load<SpriteFont>("BasicFont");
-            mesh = Content.Load<Mesh>("Woman");
-            
+            //mesh = Content.Load<Mesh>("Woman");
+            mesh = Content.Load<Mesh>("basic_teste");
+
             model = new UmbrellaToolsKit.Animation3D.Model(mesh, GraphicsDevice);
             model.SetTexture(Content.Load<Texture2D>("WomanTex"));
             model.SetLightPosition(lightPosition);
@@ -190,12 +191,12 @@ namespace Game3D
             
             if(debugMode)
             {
-                for(int i = 0; i < restPose.Size(); i++)
+                for(int i = 0; i < mesh.JointsIndexs.Length; i++)
                 {
-                    int parentIndex = restPose.GetParent(i);
+                    int parentIndex = restPose.GetParent(mesh.JointsIndexs[i]);
                     if(parentIndex != -1)
                     {
-                        Transform transform = restPose.GetGlobalTransform(i);
+                        Transform transform = restPose.GetGlobalTransform(mesh.JointsIndexs[i]);
                         Transform transformParent = restPose.GetGlobalTransform(parentIndex);
                         Line line = new Line(transform.Position, transformParent.Position, GraphicsDevice, Color.Red);
                         line.SetWorld(world);

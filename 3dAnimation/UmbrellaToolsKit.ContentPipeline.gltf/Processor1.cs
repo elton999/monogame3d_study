@@ -100,13 +100,13 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
                         var listJoints = gltf.Skins[0].Joints;
                         for (int n = bufferView.ByteOffset; n < bufferView.ByteOffset + bufferView.ByteLength; n++)
                         {
-                            int x = listJoints[uriBytes[n]];
+                            float x = uriBytes[n];
                             n++;
-                            int y = listJoints[uriBytes[n]];
+                            float y = uriBytes[n];
                             n++;
-                            int z = listJoints[uriBytes[n]];
+                            float z = uriBytes[n];
                             n++;
-                            int w = listJoints[uriBytes[n]];
+                            float w = uriBytes[n];
                             joints.Add(new Vector4(x,y,z,w));
                         }
                     }
@@ -133,7 +133,7 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
                     {
                         for (int n = bufferView.ByteOffset; n < bufferView.ByteOffset + bufferView.ByteLength; n += 2)
                         {
-                            UInt16 TriangleItem = BitConverter.ToUInt16(uriBytes, n);
+                            short TriangleItem = BitConverter.ToInt16(uriBytes, n);
                             indices.Add((short)TriangleItem);
                         }
                     }
@@ -144,7 +144,6 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
             {
                 int inverseBindIndex = (int)gltf.Skins[0].InverseBindMatrices;
                 var accessor = gltf.Accessors[inverseBindIndex];
-                meshR.InverseBindMatrix = new Matrix[accessor.Count];
 
                 int bufferIndex = accessor.BufferView.Value;
                 var bufferView = gltf.BufferViews[bufferIndex];
@@ -163,15 +162,9 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
 
                     InverseBindList.Add(matrix);
                 }
-                InverseBindList.Add(new Matrix());
-                InverseBindList.Add(new Matrix());
 
-                int count = 0;
-                foreach(int i in gltf.Skins[0].Joints)
-                {
-                    meshR.InverseBindMatrix[i] = InverseBindList[count];
-                    count++;
-                }
+                meshR.InverseBindMatrix = InverseBindList.ToArray();
+                meshR.JointsIndexs = gltf.Skins[0].Joints;
             }
 
             meshR.Vertices = vertices.ToArray();

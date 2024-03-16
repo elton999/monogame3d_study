@@ -42,7 +42,7 @@ namespace UmbrellaToolsKit.Animation3D
 
         public Transform this[int index] => GetGlobalTransform(index);
 
-        public void GetMatrixPalette(ref Matrix[] r)
+        public void GetMatrixPalette(ref Matrix[] r, int[] rm)
         {
             int size = Size();
 
@@ -53,8 +53,16 @@ namespace UmbrellaToolsKit.Animation3D
 
             for (int i = 0; i < size; i++)
             {
-                Transform t = GetGlobalTransform(i);
-		        r[i] =  Transform.TransformToMatrix(t);
+                if(i < rm.Length)
+                {
+                    Transform t = GetGlobalTransform(rm[i]);
+		            r[i] =  Transform.TransformToMatrix(t);
+                }
+                else
+                {
+                    Transform t = GetGlobalTransform(i);
+                    r[i] = Transform.TransformToMatrix(t);
+                }
             }
         }
 

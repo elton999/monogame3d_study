@@ -39,7 +39,7 @@ namespace UmbrellaToolsKit.Animation3D
             for (int i = 0; i < size; i++)
             {
                 Transform world = mBindPose.GetGlobalTransform(i);
-                mInvBindPose[i] = Inverse(Transform.TransformToMatrix(world));
+                mInvBindPose[i] = Matrix.Invert(Transform.TransformToMatrix(world));
             }
         }
 

@@ -13,6 +13,7 @@ namespace UmbrellaToolsKit.Animation3D
 
         public Clip[] Clips;
         public Matrix[] InverseBindMatrix;
+        public int[] JointsIndexs;
         public Skeleton Skeleton;
     }
 }

@@ -42,7 +42,7 @@ namespace UmbrellaToolsKit.Animation3D
         public void Draw(GraphicsDevice graphicsDevice, Matrix projection, Matrix view)
         {
             restPose =  new Matrix[1]; 
-            Skeleton.GetRestPose().GetMatrixPalette(ref restPose);
+            Skeleton.GetRestPose().GetMatrixPalette(ref restPose, _mesh.JointsIndexs);
 
             basicEffect.Parameters["World"].SetValue(_modelWorld);
             basicEffect.Parameters["View"].SetValue(view);
@@ -85,7 +85,7 @@ namespace UmbrellaToolsKit.Animation3D
             _indexBuffer.SetData(_mesh.Indices);
 
             restPose = new Matrix[1];
-            Skeleton.GetRestPose().GetMatrixPalette(ref restPose);
+            Skeleton.GetRestPose().GetMatrixPalette(ref restPose, _mesh.JointsIndexs);
         }
     }
 }

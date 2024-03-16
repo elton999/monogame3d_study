@@ -16,6 +16,11 @@
 
 #---------------------------------- Content ---------------------------------#
 
+#begin basic_teste.gltf
+/importer:Importer1
+/processor:Processor1
+/build:basic_teste.gltf
+
 #begin BasicFont.spritefont
 /importer:FontDescriptionImporter
 /processor:FontDescriptionProcessor
