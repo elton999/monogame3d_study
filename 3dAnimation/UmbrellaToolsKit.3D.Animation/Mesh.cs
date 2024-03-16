@@ -12,8 +12,7 @@ namespace UmbrellaToolsKit.Animation3D
         public Vector4[] Joints;
 
         public Clip[] Clips;
-        public Pose[] RestPose;
-        public Pose[] CurrentPose;
+        public Matrix[] InverseBindMatrix;
         public Skeleton Skeleton;
     }
 }

@@ -1,9 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using System;
-using System.Collections.Generic;
-using UmbrellaToolsKit;
 using UmbrellaToolsKit.Animation3D;
 
 namespace Game3D
@@ -42,7 +39,7 @@ namespace Game3D
             {
                 if (currentClip > 0)
                     return (currentClip % (mesh.Clips.Length - 1));
-                return currentClip = 1;
+                return currentClip = 0;
             }
         }
 
@@ -91,7 +88,7 @@ namespace Game3D
             model.SetLightPosition(lightPosition);
             model.SetEffect(Content.Load<Effect>("DiffuseLighting"));
 
-            restPose = mesh.RestPose[0];
+            restPose = mesh.Skeleton.GetRestPose();
         }
 
         bool init = true;
@@ -185,14 +182,9 @@ namespace Game3D
            
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
-            spriteBatch.Begin();
-            spriteBatch.DrawString(font, "Use (up, down) to change the animation", Vector2.Zero, Color.White);
-            spriteBatch.DrawString(font, $"Animation: {mesh.Clips[CurrentClip].mName}", Vector2.UnitY * 15, Color.White);
-            spriteBatch.DrawString(font, $"Debug Mode (Press F1): status: {debugMode} Current Bone: {currentBone} (left, right)", Vector2.UnitY * 30, Color.White);
-            spriteBatch.DrawString(font, $"FPS: {1.0f / (float)gameTime.ElapsedGameTime.TotalSeconds}", Vector2.UnitY * 45, Color.White);
-            spriteBatch.End();
+            
 
-            model.SetWorld(world * Matrix.CreateRotationY(MathHelper.ToRadians(angle)));
+            model.SetWorld(world);
            
             model.Draw(GraphicsDevice, projection, view);
             
@@ -206,11 +198,18 @@ namespace Game3D
                         Transform transform = restPose.GetGlobalTransform(i);
                         Transform transformParent = restPose.GetGlobalTransform(parentIndex);
                         Line line = new Line(transform.Position, transformParent.Position, GraphicsDevice, Color.Red);
-                        line.SetWorld(world * Matrix.CreateRotationY(MathHelper.ToRadians(angle)));
+                        line.SetWorld(world);
                         line.Draw(GraphicsDevice, projection, view);
                     }
                 }
             }
+
+            spriteBatch.Begin();
+            spriteBatch.DrawString(font, "Use (up, down) to change the animation", Vector2.Zero, Color.White);
+            spriteBatch.DrawString(font, $"Animation: {mesh.Clips[CurrentClip].mName}", Vector2.UnitY * 15, Color.White);
+            spriteBatch.DrawString(font, $"Debug Mode (Press F1): status: {debugMode} Current Bone: {currentBone} (left, right)", Vector2.UnitY * 30, Color.White);
+            spriteBatch.DrawString(font, $"FPS: {1.0f / (float)gameTime.ElapsedGameTime.TotalSeconds}", Vector2.UnitY * 45, Color.White);
+            spriteBatch.End();
 
             base.Draw(gameTime);
         }

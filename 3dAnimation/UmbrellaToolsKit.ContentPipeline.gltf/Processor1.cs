@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using glTFLoader.Schema;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content.Pipeline;
+using SharpFont;
 using UmbrellaToolsKit.Animation3D;
 using UmbrellaToolsKit.Animation3D.Tracks;
 using TInput = glTFLoader.Schema.Gltf;
@@ -96,16 +97,16 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
                     //Joints 
                     if (attributes[i].Attributes.ContainsKey("JOINTS_0") && attributes[i].Attributes["JOINTS_0"] == j && accessor.Type == glTFLoader.Schema.Accessor.TypeEnum.VEC4)
                     {
+                        var listJoints = gltf.Skins[0].Joints;
                         for (int n = bufferView.ByteOffset; n < bufferView.ByteOffset + bufferView.ByteLength; n++)
                         {
-                            float x = uriBytes[n];
+                            int x = listJoints[uriBytes[n]];
                             n++;
-                            float y = uriBytes[n];
+                            int y = listJoints[uriBytes[n]];
                             n++;
-                            float z = uriBytes[n];
+                            int z = listJoints[uriBytes[n]];
                             n++;
-                            float w = uriBytes[n];
-
+                            int w = listJoints[uriBytes[n]];
                             joints.Add(new Vector4(x,y,z,w));
                         }
                     }
@@ -115,6 +116,7 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
                     {
                         for (int n = bufferView.ByteOffset; n < bufferView.ByteOffset + bufferView.ByteLength; n += 4)
                         {
+                            
                             float x = BitConverter.ToSingle(uriBytes, n);
                             n += 4;
                             float y = BitConverter.ToSingle(uriBytes, n);
@@ -122,7 +124,6 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
                             float z = BitConverter.ToSingle(uriBytes, n);
                             n += 4;
                             float w = BitConverter.ToSingle(uriBytes, n);
-
                             weights.Add(new Vector4(x, y, z, w));
                         }
                     }
@@ -139,6 +140,40 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
                 }
             }
 
+            if (gltf.Skins.Length > 0 && gltf.Skins[0].ShouldSerializeInverseBindMatrices())
+            {
+                int inverseBindIndex = (int)gltf.Skins[0].InverseBindMatrices;
+                var accessor = gltf.Accessors[inverseBindIndex];
+                meshR.InverseBindMatrix = new Matrix[accessor.Count];
+
+                int bufferIndex = accessor.BufferView.Value;
+                var bufferView = gltf.BufferViews[bufferIndex];
+                byte[] uriBytes = uriBytesList[bufferView.Buffer];
+
+                var InverseBindList = new List<Matrix>();
+
+                for (int n = bufferView.ByteOffset; n < bufferView.ByteOffset + bufferView.ByteLength; n += 4)
+                {
+                    var matrix = new Matrix();
+                    for (int i = 0; i < 16; i++)
+                    {
+                        matrix[i] = BitConverter.ToSingle(uriBytes, n);
+                        if(i < 15) n += 4;
+                    }
+
+                    InverseBindList.Add(matrix);
+                }
+                InverseBindList.Add(new Matrix());
+                InverseBindList.Add(new Matrix());
+
+                int count = 0;
+                foreach(int i in gltf.Skins[0].Joints)
+                {
+                    meshR.InverseBindMatrix[i] = InverseBindList[count];
+                    count++;
+                }
+            }
+
             meshR.Vertices = vertices.ToArray();
             meshR.Normals = normals.ToArray();
             meshR.Indices = indices.ToArray();
@@ -146,16 +181,15 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
             meshR.Joints = joints.ToArray();
             meshR.Weights = weights.ToArray();
             meshR.Clips = LoadAnimationClips(gltf);
-            meshR.RestPose = new Pose[1] { LoadRestPose(gltf) };
-            meshR.CurrentPose = meshR.RestPose;
-
+            var restPose = LoadRestPose(gltf);
+            var bindPose = LoadRestPose(gltf);
+            meshR.Skeleton = new Skeleton(restPose, bindPose);
             return meshR;
         }
 
         public static Pose LoadRestPose(glTFLoader.Schema.Gltf gltf)
         {
             int boneCount = gltf.Nodes.Length;
-            Console.WriteLine(boneCount);
             Pose result = new Pose(boneCount);
 
             for(int i = 0; i < boneCount; i++)

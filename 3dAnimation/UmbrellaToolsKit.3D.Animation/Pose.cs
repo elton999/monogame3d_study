@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
+using System;
 using System.Collections.Generic;
 
 namespace UmbrellaToolsKit.Animation3D
@@ -28,11 +29,12 @@ namespace UmbrellaToolsKit.Animation3D
         {
             Transform result = mJoints[index];
             int parentIndex = GetParent(index);
-
-            while (parentIndex != -1 && parentIndex != index)
+            int i = 0;
+            while (parentIndex != -1 && i < 100)
             {
                 result = Transform.Combine(mJoints[parentIndex], result);
                 parentIndex = GetParent(parentIndex);
+                i++;
             }
 
             return result;
@@ -40,20 +42,19 @@ namespace UmbrellaToolsKit.Animation3D
 
         public Transform this[int index] => GetGlobalTransform(index);
 
-        public void GetMatrixPalette(List<Matrix> r)
+        public void GetMatrixPalette(ref Matrix[] r)
         {
             int size = Size();
 
-            if (r.Count != size)
+            if (r.Length != size)
 	        {
-                r.Capacity = size;
-                r.TrimExcess();
+		        r = new Matrix[size];
             }
 
-            for (int i = 0; i < size; ++i)
+            for (int i = 0; i < size; i++)
             {
                 Transform t = GetGlobalTransform(i);
-		        r[i] = Transform.TransformToMatrix(t);
+		        r[i] =  Transform.TransformToMatrix(t);
             }
         }
 

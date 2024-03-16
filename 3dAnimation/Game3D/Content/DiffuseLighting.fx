@@ -7,14 +7,22 @@
 	#define PS_SHADERMODEL ps_4_0_level_9_1
 #endif
 
+#define MAX_BONES 70
+
 float4x4 World;
 float4x4 View;
 float4x4 Projection;
+
 float3 lightPosition;
-bool debugMode;
-uint currentBone;
 
 Texture2D SpriteTexture;
+
+matrix Bones[MAX_BONES];
+matrix RestPose[MAX_BONES];
+
+// Debug
+bool debugMode;
+uint currentBone;
 
 sampler2D SpriteTextureSampler = sampler_state
 {
@@ -27,7 +35,7 @@ struct VertexShaderInput
 	float4 Color : COLOR0;
 	float4 Normal : NORMAL0;
     float2 TextureCoordinates : TEXCOORD0;
-    uint4  Joints : BLENDINDICES0;
+    float4  Joints : BLENDINDICES0;
     float4 Weights : BLENDWEIGHT0;
 };
 
@@ -82,8 +90,18 @@ VertexShaderOutput MainVS(in VertexShaderInput input)
 {
 	VertexShaderOutput output = (VertexShaderOutput)0;
 
-	output.Position = mul(mul(mul(input.Position, World), View), Projection);
-	float4 fragPos = mul(mul(mul(World, View), Projection), input.Position);
+    matrix modelViewProjection = mul(mul(Projection, View), World);
+
+    matrix skinMatrix = mul(input.Weights.x, mul(RestPose[int(input.Joints.x)], Bones[int(input.Joints.x)]));
+    skinMatrix += mul(input.Weights.y, mul(RestPose[int(input.Joints.y)], Bones[int(input.Joints.y)]));
+    skinMatrix += mul(input.Weights.z, mul(RestPose[int(input.Joints.z)], Bones[int(input.Joints.z)]));
+    skinMatrix += mul(input.Weights.w, mul(RestPose[int(input.Joints.w)], Bones[int(input.Joints.w)]));
+
+
+    float4 worldPosition = mul(World , mul(input.Position, skinMatrix));
+    float4 viewPosition = mul(worldPosition, View);
+    output.Position = mul(viewPosition, Projection);
+	float4 fragPos = mul(modelViewProjection, mul(input.Position, skinMatrix));
 
 	float4 norm = normalize(mul(inverse(World), input.Normal));
 	float4 lightDir = normalize(float4(lightPosition, 0) - float4(fragPos[0], fragPos[1], fragPos[2], 1));
@@ -96,10 +114,10 @@ VertexShaderOutput MainVS(in VertexShaderInput input)
     
     if (debugMode)
     {
-        if (input.Joints.x == currentBone || input.Joints.y == currentBone || input.Joints.z == currentBone || input.Joints.w == currentBone)
-            output.Color = float4(1, 0, 0, 1) * input.Weights.x;
+        if (input.Joints.x == currentBone)
+            output.Color = float4(1,0,0,1);
         else
-            output.Color = float4(0,0,0,1);
+            output.Color = float4(0,0,1,1);
     }
 	return output;
 }

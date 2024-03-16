@@ -1,7 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using System;
-using System.Diagnostics;
 
 namespace UmbrellaToolsKit.Animation3D
 {
@@ -21,6 +19,8 @@ namespace UmbrellaToolsKit.Animation3D
         private bool _debugMode = false;
         private int _currentBone = 0;
 
+        public Skeleton Skeleton => _mesh.Skeleton;
+
         public Model(Mesh mesh, GraphicsDevice graphicsDevice)
         {
             _mesh = mesh;
@@ -38,9 +38,12 @@ namespace UmbrellaToolsKit.Animation3D
             _debugMode= status;
             _currentBone = bone;
         }
-
+        Matrix[] restPose;
         public void Draw(GraphicsDevice graphicsDevice, Matrix projection, Matrix view)
         {
+            restPose =  new Matrix[1]; 
+            Skeleton.GetRestPose().GetMatrixPalette(ref restPose);
+
             basicEffect.Parameters["World"].SetValue(_modelWorld);
             basicEffect.Parameters["View"].SetValue(view);
             basicEffect.Parameters["Projection"].SetValue(projection);
@@ -48,6 +51,8 @@ namespace UmbrellaToolsKit.Animation3D
             basicEffect.Parameters["SpriteTexture"].SetValue(_texture);
             basicEffect.Parameters["debugMode"].SetValue(_debugMode);
             basicEffect.Parameters["currentBone"].SetValue(_currentBone);
+            basicEffect.Parameters["Bones"].SetValue(_mesh.InverseBindMatrix);
+            basicEffect.Parameters["RestPose"].SetValue(restPose);
 
             graphicsDevice.BlendState = BlendState.Opaque;
             graphicsDevice.DepthStencilState = DepthStencilState.Default;
@@ -56,31 +61,31 @@ namespace UmbrellaToolsKit.Animation3D
             
             graphicsDevice.SetVertexBuffer(_vertexBuffer);
             graphicsDevice.Indices = _indexBuffer;
-
+            
             foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
             {
                 pass.Apply();
-                graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, _mesh.Vertices.Length, 0, _mesh.Indices.Length / 3);
+                if(_debugMode)
+                    graphicsDevice.DrawIndexedPrimitives(PrimitiveType.LineList, 0, 0, _mesh.Vertices.Length, 0, _mesh.Indices.Length / 3);
+                else
+                    graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, _mesh.Vertices.Length, 0, _mesh.Indices.Length / 3);
             }
         }
 
         private void LoadModel(GraphicsDevice graphicsDevice)
         {
             ModelVertexType[] vertices = new ModelVertexType[_mesh.Vertices.Length];
-            Console.WriteLine($"vertex lenght: {_mesh.Vertices.Length}");
-            Console.WriteLine($"joints lenght: {_mesh.Joints.Length}");
-            Console.WriteLine($"weight lenght: {_mesh.Weights.Length}");
             for (int i = 0; i < _mesh.Vertices.Length; i++)
-            {
                 vertices[i] = new ModelVertexType(_mesh.Vertices[i], Color.White, _mesh.Normals[i], _mesh.TexCoords[i], _mesh.Joints[i], _mesh.Weights[i]);
-                //Console.WriteLine(vertices[i].ToString());
-            }
 
             _vertexBuffer = new VertexBuffer(graphicsDevice, typeof(ModelVertexType), _mesh.Vertices.Length, BufferUsage.WriteOnly);
             _vertexBuffer.SetData<ModelVertexType>(vertices);
 
             _indexBuffer = new IndexBuffer(graphicsDevice, typeof(short), _mesh.Indices.Length, BufferUsage.WriteOnly);
             _indexBuffer.SetData(_mesh.Indices);
+
+            restPose = new Matrix[1];
+            Skeleton.GetRestPose().GetMatrixPalette(ref restPose);
         }
     }
 }
