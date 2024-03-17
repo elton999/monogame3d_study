@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace UmbrellaToolsKit.Animation3D
 {
@@ -42,27 +43,28 @@ namespace UmbrellaToolsKit.Animation3D
 
         public Transform this[int index] => GetGlobalTransform(index);
 
-        public void GetMatrixPalette(ref Matrix[] r, int[] rm)
+        public void GetMatrixPalette(ref Matrix[] result, int[] rm)
         {
             int size = Size();
 
-            if (r.Length != size)
+            if (result.Length != size)
 	        {
-		        r = new Matrix[size];
+		        result = new Matrix[size];
             }
 
             for (int i = 0; i < size; i++)
             {
-                if(i < rm.Length)
-                {
-                    Transform t = GetGlobalTransform(rm[i]);
-		            r[i] =  Transform.TransformToMatrix(t);
-                }
-                else
+                if(i < size)
                 {
                     Transform t = GetGlobalTransform(i);
-                    r[i] = Transform.TransformToMatrix(t);
+		            result[i] =  Transform.TransformToMatrix(t);
                 }
+            }
+
+            Matrix[] rClone = (new List<Matrix>(result)).ToArray();
+            for(int i =0; i < rm.Length; i++)
+            {
+                result[i] = rClone[rm[i]];
             }
         }
 

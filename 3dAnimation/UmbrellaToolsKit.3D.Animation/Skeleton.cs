@@ -12,12 +12,13 @@ namespace UmbrellaToolsKit.Animation3D
 
         public Skeleton() { }
 
-        public Skeleton(Pose rest, Pose bind) => Set(rest, bind);
+        public Skeleton(Pose rest, Pose bind, List<string> joitNames) => Set(rest, bind, joitNames);
 
-        public void Set(Pose rest, Pose bind)
+        public void Set(Pose rest, Pose bind, List<string> joitNames)
         {
             mRestPose = rest;
             mBindPose = bind;
+            mJointNames= joitNames;
             UpdateInverseBindPose();
         }
 

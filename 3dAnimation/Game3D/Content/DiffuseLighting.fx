@@ -7,7 +7,7 @@
 	#define PS_SHADERMODEL ps_4_0_level_9_1
 #endif
 
-#define MAX_BONES 70
+#define MAX_BONES 90
 
 float4x4 World;
 float4x4 View;
@@ -92,13 +92,14 @@ VertexShaderOutput MainVS(in VertexShaderInput input)
 
     matrix modelViewProjection = mul(mul(Projection, View), World);
 
+
     matrix skinMatrix = mul(input.Weights.x, mul(RestPose[int(input.Joints.x)], Bones[int(input.Joints.x)]));
     skinMatrix += mul(input.Weights.y, mul(RestPose[int(input.Joints.y)], Bones[int(input.Joints.y)]));
     skinMatrix += mul(input.Weights.z, mul(RestPose[int(input.Joints.z)], Bones[int(input.Joints.z)]));
     skinMatrix += mul(input.Weights.w, mul(RestPose[int(input.Joints.w)], Bones[int(input.Joints.w)]));
 
 
-    float4 worldPosition = mul(World , mul(input.Position, skinMatrix));
+    float4 worldPosition = mul(mul(input.Position, skinMatrix), World);
     float4 viewPosition = mul(worldPosition, View);
     output.Position = mul(viewPosition, Projection);
 	float4 fragPos = mul(modelViewProjection, mul(input.Position, skinMatrix));

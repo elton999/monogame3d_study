@@ -20,9 +20,9 @@ namespace Game3D
         
         RenderTarget2D MainTarget;
 
-        Matrix world = Matrix.CreateTranslation(0, 0, 0);
-        Matrix view = Matrix.CreateLookAt(new Vector3(0, 4, 14), new Vector3(0, 3, 0), new Vector3(0, 1, 0));
-        Matrix projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(45), SCREENWIDTH / SCREENHEIGHT, 0.01f, 100000f);
+        Matrix world = Matrix.CreateTranslation(0, 0, 5.0f);
+        Matrix view = Matrix.CreateLookAt(new Vector3(0, 4, 20), new Vector3(0, 3, 0), new Vector3(0, 1, 0));
+        Matrix projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(45), SCREENWIDTH / SCREENHEIGHT, 0.01f, 100f);
 
         Vector3 lightPosition = new Vector3(2, 2, 2);
 
@@ -38,7 +38,7 @@ namespace Game3D
             get
             {
                 if (currentClip > 0)
-                    return (currentClip % (mesh.Clips.Length - 1));
+                    return (currentClip % (mesh.Clips.Length));
                 return currentClip = 0;
             }
         }
@@ -98,8 +98,11 @@ namespace Game3D
         bool buttonLeftPressed = false;
         bool buttonRightPressed = false;
         bool buttonF1Pressed = false;
+        bool buttonPlusPressed = false;
+        bool buttonLessPressed = false;
         int currentBone = 0;
         bool debugMode = false;
+        float animationSpeed = 1f;
         protected override void Update(GameTime gameTime)
         {
             if(init)
@@ -139,6 +142,17 @@ namespace Game3D
                 buttonF1Pressed = true;
                 debugMode = !debugMode;
             }
+            if (!buttonPlusPressed && Keyboard.GetState().IsKeyDown(Keys.Add))
+            {
+                buttonPlusPressed = true;
+                animationSpeed += 0.1f;
+            }
+
+            if (!buttonLessPressed && Keyboard.GetState().IsKeyDown(Keys.Subtract))
+            {
+                buttonLessPressed = true;
+                animationSpeed -= 0.1f;
+            }
 
 
             if (Keyboard.GetState().IsKeyUp(Keys.Up))
@@ -156,7 +170,13 @@ namespace Game3D
             if (Keyboard.GetState().IsKeyUp(Keys.F1))
                 buttonF1Pressed = false;
 
-            playbackTime = mesh.Clips[CurrentClip].Sample(restPose, playbackTime + (float)gameTime.ElapsedGameTime.TotalSeconds);
+            if (Keyboard.GetState().IsKeyUp(Keys.Add))
+                buttonPlusPressed = false;
+
+            if (Keyboard.GetState().IsKeyUp(Keys.Subtract))
+                buttonLessPressed = false;
+
+            playbackTime = mesh.Clips[CurrentClip].Sample(restPose, playbackTime + ((float)gameTime.ElapsedGameTime.TotalSeconds * animationSpeed));
 
             model.DebugMode(debugMode, currentBone);
 
@@ -181,25 +201,35 @@ namespace Game3D
                 angle -= 360.0f;
 
            
-            GraphicsDevice.Clear(Color.CornflowerBlue);
+            GraphicsDevice.Clear(Color.Gray);
 
-            
+            var modelWorld = world * Matrix.CreateRotationY(MathHelper.ToRadians(angle));
 
-            model.SetWorld(world);
+            model.SetWorld(modelWorld);
            
             model.Draw(GraphicsDevice, projection, view);
             
             if(debugMode)
             {
-                for(int i = 0; i < mesh.JointsIndexs.Length; i++)
+                for (int i = 0; i < mesh.JointsIndexs.Length; i++)
                 {
-                    int parentIndex = restPose.GetParent(mesh.JointsIndexs[i]);
-                    if(parentIndex != -1)
+                    int parentIndex = restPose.GetParent(i);
+                    if (parentIndex != -1)
                     {
-                        Transform transform = restPose.GetGlobalTransform(mesh.JointsIndexs[i]);
+                        Transform transform = restPose.GetGlobalTransform(i);
                         Transform transformParent = restPose.GetGlobalTransform(parentIndex);
-                        Line line = new Line(transform.Position, transformParent.Position, GraphicsDevice, Color.Red);
-                        line.SetWorld(world);
+                        Line line = new Line(transform.Position, transformParent.Position, GraphicsDevice,  Color.Red);
+                        line.SetWorld(modelWorld);
+                        line.Draw(GraphicsDevice, projection, view);
+                    }
+                }
+                for (int i = 0; i < mesh.InverseBindMatrix.Length; i++)
+                {
+                    int parentIndex = restPose.GetParent(i);
+                    if (parentIndex != -1 && mesh.InverseBindMatrix.Length > parentIndex)
+                    {
+                        Line line = new Line(Matrix.Invert(mesh.InverseBindMatrix[i]).Translation, Matrix.Invert(mesh.InverseBindMatrix[parentIndex]).Translation, GraphicsDevice, Color.White);
+                        line.SetWorld(modelWorld);
                         line.Draw(GraphicsDevice, projection, view);
                     }
                 }
@@ -208,8 +238,9 @@ namespace Game3D
             spriteBatch.Begin();
             spriteBatch.DrawString(font, "Use (up, down) to change the animation", Vector2.Zero, Color.White);
             spriteBatch.DrawString(font, $"Animation: {mesh.Clips[CurrentClip].mName}", Vector2.UnitY * 15, Color.White);
-            spriteBatch.DrawString(font, $"Debug Mode (Press F1): status: {debugMode} Current Bone: {currentBone} (left, right)", Vector2.UnitY * 30, Color.White);
+            spriteBatch.DrawString(font, $"Debug Mode (Press F1): status: {debugMode} Current Bone: {(currentBone < mesh.JointsIndexs.Length && currentBone >= 0 ? mesh.Skeleton.GetJoinName(mesh.JointsIndexs[currentBone]) : currentBone) } (left, right)", Vector2.UnitY * 30, Color.White);
             spriteBatch.DrawString(font, $"FPS: {1.0f / (float)gameTime.ElapsedGameTime.TotalSeconds}", Vector2.UnitY * 45, Color.White);
+
             spriteBatch.End();
 
             base.Draw(gameTime);

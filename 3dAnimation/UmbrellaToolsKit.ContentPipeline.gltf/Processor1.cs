@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using glTFLoader.Schema;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content.Pipeline;
-using SharpFont;
 using UmbrellaToolsKit.Animation3D;
 using UmbrellaToolsKit.Animation3D.Tracks;
 using TInput = glTFLoader.Schema.Gltf;
@@ -67,7 +66,7 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
                     }
 
                     // Normals
-                    if (attributes[i].Attributes["NORMAL"] == j && accessor.Type == glTFLoader.Schema.Accessor.TypeEnum.VEC3)
+                    if (attributes[i].Attributes.ContainsKey("NORMAL") && attributes[i].Attributes["NORMAL"] == j && accessor.Type == glTFLoader.Schema.Accessor.TypeEnum.VEC3)
                     {
                         for (int n = bufferView.ByteOffset; n < bufferView.ByteOffset + bufferView.ByteLength; n += 4)
                         {
@@ -82,7 +81,7 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
                     }
 
                     //Texture Coords
-                    if (attributes[i].Attributes.ContainsKey("TEXCOORD_0") && attributes[i].Attributes["TEXCOORD_0"] == j && accessor.Type == glTFLoader.Schema.Accessor.TypeEnum.VEC2)
+                    if (attributes[i].Attributes.ContainsKey("NORMAL") &&  attributes[i].Attributes.ContainsKey("TEXCOORD_0") && attributes[i].Attributes["TEXCOORD_0"] == j && accessor.Type == glTFLoader.Schema.Accessor.TypeEnum.VEC2)
                     {
                         for (int n = bufferView.ByteOffset; n < bufferView.ByteOffset + bufferView.ByteLength; n += 4)
                         {
@@ -163,6 +162,7 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
                     InverseBindList.Add(matrix);
                 }
 
+
                 meshR.InverseBindMatrix = InverseBindList.ToArray();
                 meshR.JointsIndexs = gltf.Skins[0].Joints;
             }
@@ -176,7 +176,7 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
             meshR.Clips = LoadAnimationClips(gltf);
             var restPose = LoadRestPose(gltf);
             var bindPose = LoadRestPose(gltf);
-            meshR.Skeleton = new Skeleton(restPose, bindPose);
+            meshR.Skeleton = new Skeleton(restPose, bindPose, LoadJoitNames(gltf));
             return meshR;
         }
 
@@ -222,6 +222,14 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
             if (node.Scale != null)
                 result.Scale = new Vector3(node.Scale[0], node.Scale[1], node.Scale[2]);
 
+            return result;
+        }
+
+        public static List<string> LoadJoitNames(glTFLoader.Schema.Gltf gltf)
+        {
+            List<string> result = new List<string>();
+            foreach (var node in gltf.Nodes)
+                result.Add(node.Name);
             return result;
         }
 
