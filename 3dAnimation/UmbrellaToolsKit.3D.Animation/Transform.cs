@@ -9,12 +9,7 @@ namespace UmbrellaToolsKit.Animation3D
         public Quaternion Rotation; 
         public Vector3 Scale;
 
-        public Transform() 
-        {
-            Position = new Vector3();
-            Rotation = new Quaternion();
-            Scale = new Vector3();
-        }
+        public Transform() { }
 
         public Transform(Vector3 position, Quaternion rotation, Vector3 scale)
         {
@@ -34,44 +29,6 @@ namespace UmbrellaToolsKit.Animation3D
             result.Position = a.Position + result.Position;
 
             return result;
-        }
-
-        public static Transform mat4ToTransform(Matrix m)
-        {
-            Transform result = new Transform();
-
-            result.Position = new Vector3(m[12], m[13], m[14]);
-            result.Rotation = Quaternion.CreateFromRotationMatrix(m);
-
-            Matrix rotScaleMat = new Matrix(
-                m[0], m[1], m[2],  0,
-		        m[4], m[5], m[6],  0,
-		        m[8], m[9], m[10], 0,
-		        0,    0,    0,     1
-	            );
-            Matrix invRotMat = Matrix.CreateFromQuaternion(Quaternion.Inverse(result.Rotation));
-            Matrix scaleSkewMat = rotScaleMat * invRotMat;
-
-            result.Scale = new Vector3(
-                scaleSkewMat[0],
-                scaleSkewMat[5],
-                scaleSkewMat[10]
-            );
-
-            return result;
-        }
-
-        public static Transform Inverse(Transform t)
-        {
-            Transform inv = new Transform();
-            inv.Rotation = Quaternion.Inverse(t.Rotation);
-            inv.Scale.X = MathF.Abs(t.Scale.X) < float.MinValue ? 0.0f : 1.0f / t.Scale.X;
-            inv.Scale.Y = MathF.Abs(t.Scale.Y) < float.MinValue ? 0.0f : 1.0f / t.Scale.Y;
-            inv.Scale.Z = MathF.Abs(t.Scale.Z) < float.MinValue ? 0.0f : 1.0f / t.Scale.Z;
-
-            Vector3 invTrans = t.Position * -1.0f;
-            inv.Position = QuatMultVector(inv.Rotation, (inv.Scale * invTrans));
-            return inv;
         }
 
         public static Vector3 QuatMultVector(Quaternion q, Vector3 v)

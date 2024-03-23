@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using System;
 
 namespace UmbrellaToolsKit.Animation3D
 {
@@ -43,7 +44,7 @@ namespace UmbrellaToolsKit.Animation3D
         {
             restPose =  new Matrix[1]; 
             Skeleton.GetRestPose().GetMatrixPalette(ref restPose, _mesh.JointsIndexs);
-            Skeleton.UpdateInverseBindPose(_mesh.JointsIndexs);
+            Console.WriteLine(restPose.Length);
 
             basicEffect.Parameters["World"].SetValue(_modelWorld);
             basicEffect.Parameters["View"].SetValue(view);
@@ -52,7 +53,7 @@ namespace UmbrellaToolsKit.Animation3D
             basicEffect.Parameters["SpriteTexture"].SetValue(_texture);
             basicEffect.Parameters["debugMode"].SetValue(_debugMode);
             basicEffect.Parameters["currentBone"].SetValue(_currentBone);
-            basicEffect.Parameters["Bones"].SetValue(Skeleton.GetInvBindPose());
+            basicEffect.Parameters["Bones"].SetValue(_mesh.InverseBindMatrix);
             basicEffect.Parameters["RestPose"].SetValue(restPose);
 
             graphicsDevice.BlendState = BlendState.Opaque;

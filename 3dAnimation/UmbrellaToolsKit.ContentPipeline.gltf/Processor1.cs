@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using glTFLoader.Schema;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content.Pipeline;
-using SharpFont;
 using UmbrellaToolsKit.Animation3D;
 using UmbrellaToolsKit.Animation3D.Tracks;
 using TInput = glTFLoader.Schema.Gltf;
@@ -124,9 +123,7 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
                             float z = BitConverter.ToSingle(uriBytes, n);
                             n += 4;
                             float w = BitConverter.ToSingle(uriBytes, n);
-                            var vector = new Vector4(x, y, z, w);
-                            vector.Normalize();
-                            weights.Add(vector);
+                            weights.Add(new Vector4(x, y, z, w));
                         }
                     }
 
@@ -142,29 +139,6 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
                 }
             }
 
-            meshR.Vertices = vertices.ToArray();
-            meshR.Normals = normals.ToArray();
-            meshR.Indices = indices.ToArray();
-            meshR.TexCoords = texCoords.ToArray();
-            meshR.Joints = joints.ToArray();
-            meshR.Weights = weights.ToArray();
-            meshR.Clips = LoadAnimationClips(gltf);
-            meshR.JointsIndexs = gltf.Skins[0].Joints;
-            var restPose = LoadRestPose(gltf);
-            var bindPose = LoadBindPose(gltf);
-            meshR.Skeleton = new Skeleton(restPose, bindPose, LoadJoitNames(gltf));
-            return meshR;
-        }
-
-        public static Pose LoadBindPose(glTFLoader.Schema.Gltf gltf)
-        {
-            Pose restPose = LoadRestPose(gltf);
-            int numBones = restPose.Size();
-            Transform[] worldBindPose = new Transform[numBones];
-
-            for (int i = 0; i < numBones; i++)
-                worldBindPose[i] = restPose.GetGlobalTransform(i);
-
             if (gltf.Skins.Length > 0 && gltf.Skins[0].ShouldSerializeInverseBindMatrices())
             {
                 int inverseBindIndex = (int)gltf.Skins[0].InverseBindMatrices;
@@ -174,40 +148,36 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
                 var bufferView = gltf.BufferViews[bufferIndex];
                 byte[] uriBytes = uriBytesList[bufferView.Buffer];
 
-                int index = 0;
+                var InverseBindList = new List<Matrix>();
+
                 for (int n = bufferView.ByteOffset; n < bufferView.ByteOffset + bufferView.ByteLength; n += 4)
                 {
-                    Matrix invBindMatrix = new Matrix();
+                    var matrix = new Matrix();
                     for (int i = 0; i < 16; i++)
                     {
-                        invBindMatrix[i] = BitConverter.ToSingle(uriBytes, n);
-                        if (i < 15) n += 4;
+                        matrix[i] = BitConverter.ToSingle(uriBytes, n);
+                        if(i < 15) n += 4;
                     }
-                    Matrix bindMatrix = Matrix.Invert(invBindMatrix);
-                    Transform bindTransform = Transform.mat4ToTransform(bindMatrix);
 
-                    var joints = gltf.Skins[0].Joints;
-                    int id = index < joints.Length ? joints[index] : index;
-                    worldBindPose[id] = bindTransform;
-
-                    index++;
+                    InverseBindList.Add(matrix);
                 }
+
+
+                meshR.InverseBindMatrix = InverseBindList.ToArray();
+                meshR.JointsIndexs = gltf.Skins[0].Joints;
             }
 
-            Pose bindPose = restPose;
-            for (int i = 0; i < numBones; ++i)
-            {
-                Transform current = worldBindPose[i];
-                int p = bindPose.GetParent(i);
-                if (p >= 0)
-                { // Bring into parent space
-                    Transform parent = worldBindPose[p];
-                    current = Transform.Combine(Transform.Inverse(parent), current);
-                }
-                bindPose.SetLocalTransform(i, current);
-            }
-
-            return bindPose;
+            meshR.Vertices = vertices.ToArray();
+            meshR.Normals = normals.ToArray();
+            meshR.Indices = indices.ToArray();
+            meshR.TexCoords = texCoords.ToArray();
+            meshR.Joints = joints.ToArray();
+            meshR.Weights = weights.ToArray();
+            meshR.Clips = LoadAnimationClips(gltf);
+            var restPose = LoadRestPose(gltf);
+            var bindPose = LoadRestPose(gltf);
+            meshR.Skeleton = new Skeleton(restPose, bindPose, LoadJoitNames(gltf));
+            return meshR;
         }
 
         public static Pose LoadRestPose(glTFLoader.Schema.Gltf gltf)
@@ -223,11 +193,11 @@ namespace UmbrellaToolsKit.ContentPipeline.gltf
                 result.SetLocalTransform(i, transform);
 
                 int parent = -1;
-                for(int j = 0; j < gltf.Nodes.Length; ++j)
+                for(int j = 0; j < gltf.Nodes.Length; j++)
                 {
                     if(gltf.Nodes[j].Children != null)
                     {
-                        for (int k = 0; k < gltf.Nodes[j].Children.Length; ++k)
+                        for (int k = 0; k < gltf.Nodes[j].Children.Length; k++)
                             if (gltf.Nodes[j].Children[k] == i)
                                 parent = j;
                         if(parent != -1)
