@@ -83,7 +83,7 @@ namespace Game3D
         {
             font = Content.Load<SpriteFont>("BasicFont");
             mesh = Content.Load<Mesh>("Woman");
-            //mesh = Content.Load<Mesh>("basic_teste");
+            //mesh = Content.Load<Mesh>("untitled");
 
             model = new UmbrellaToolsKit.Animation3D.Model(mesh, GraphicsDevice);
             model.SetTexture(Content.Load<Texture2D>("WomanTex"));
@@ -196,9 +196,9 @@ namespace Game3D
         
         protected override void Draw(GameTime gameTime)
         {
-            angle += 0.8f;
+            /*angle += 0.8f;
             if (angle > 360.0f)
-                angle -= 360.0f;
+                angle -= 360.0f;*/
 
             GraphicsDevice.Clear( debugMode ? Color.Black : Color.Gray);
 

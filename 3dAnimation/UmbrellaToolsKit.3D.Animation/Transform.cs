@@ -39,25 +39,19 @@ namespace UmbrellaToolsKit.Animation3D
         public static Transform mat4ToTransform(Matrix m)
         {
             Transform result = new Transform();
-
-            result.Position = new Vector3(m[12], m[13], m[14]);
+            result.Position = m.Translation;
             result.Rotation = Quaternion.CreateFromRotationMatrix(m);
-
+            
             Matrix rotScaleMat = new Matrix(
-                m[0], m[1], m[2],  0,
-		        m[4], m[5], m[6],  0,
+                m[0], m[1], m[2], 0,
+		        m[4], m[5], m[6], 0,
 		        m[8], m[9], m[10], 0,
-		        0,    0,    0,     1
-	            );
+		        0, 0, 0, 1
+	        );
             Matrix invRotMat = Matrix.CreateFromQuaternion(Quaternion.Inverse(result.Rotation));
             Matrix scaleSkewMat = rotScaleMat * invRotMat;
 
-            result.Scale = new Vector3(
-                scaleSkewMat[0],
-                scaleSkewMat[5],
-                scaleSkewMat[10]
-            );
-
+            result.Scale = new Vector3(scaleSkewMat[0], scaleSkewMat[5], scaleSkewMat[10]);
             return result;
         }
 

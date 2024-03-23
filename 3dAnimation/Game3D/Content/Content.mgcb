@@ -58,6 +58,11 @@
 /processorParam:DebugMode=Auto
 /build:DiffuseLighting.fx
 
+#begin untitled.gltf
+/importer:Importer1
+/processor:Processor1
+/build:untitled.gltf
+
 #begin Woman.gltf
 /importer:Importer1
 /processor:Processor1
