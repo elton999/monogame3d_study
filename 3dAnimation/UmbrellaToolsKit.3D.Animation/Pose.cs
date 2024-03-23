@@ -30,10 +30,12 @@ namespace UmbrellaToolsKit.Animation3D
         {
             Transform result = mJoints[index];
             int parentIndex = GetParent(index);
-            if(parentIndex >= 0)
+            int i = 0;
+            while (parentIndex != -1 && i < 100)
             {
                 result = Transform.Combine(mJoints[parentIndex], result);
                 parentIndex = GetParent(parentIndex);
+                i++;
             }
 
             return result;
