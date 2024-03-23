@@ -1,6 +1,8 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using System.Globalization;
+using System;
 using UmbrellaToolsKit.Animation3D;
 
 namespace Game3D
@@ -20,7 +22,7 @@ namespace Game3D
         
         RenderTarget2D MainTarget;
 
-        Matrix world = Matrix.CreateTranslation(0, 0, 5.0f);
+        Matrix world = Matrix.CreateTranslation(0, 0, 0);
         Matrix view = Matrix.CreateLookAt(new Vector3(0, 4, 20), new Vector3(0, 3, 0), new Vector3(0, 1, 0));
         Matrix projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(45), SCREENWIDTH / SCREENHEIGHT, 0.01f, 100f);
 
@@ -29,7 +31,6 @@ namespace Game3D
         UmbrellaToolsKit.Animation3D.Mesh mesh;
         UmbrellaToolsKit.Animation3D.Model model;
 
-        Pose currentPose;
         Pose restPose;
         float playbackTime;
         int currentClip;
@@ -81,8 +82,8 @@ namespace Game3D
         protected override void LoadContent()
         {
             font = Content.Load<SpriteFont>("BasicFont");
-            //mesh = Content.Load<Mesh>("Woman");
-            mesh = Content.Load<Mesh>("basic_teste");
+            mesh = Content.Load<Mesh>("Woman");
+            //mesh = Content.Load<Mesh>("basic_teste");
 
             model = new UmbrellaToolsKit.Animation3D.Model(mesh, GraphicsDevice);
             model.SetTexture(Content.Load<Texture2D>("WomanTex"));
@@ -154,7 +155,6 @@ namespace Game3D
                 animationSpeed -= 0.1f;
             }
 
-
             if (Keyboard.GetState().IsKeyUp(Keys.Up))
                 buttonUpPressed = false;
 
@@ -200,8 +200,7 @@ namespace Game3D
             if (angle > 360.0f)
                 angle -= 360.0f;
 
-           
-            GraphicsDevice.Clear(Color.Gray);
+            GraphicsDevice.Clear( debugMode ? Color.Black : Color.Gray);
 
             var modelWorld = world * Matrix.CreateRotationY(MathHelper.ToRadians(angle));
 
@@ -211,6 +210,7 @@ namespace Game3D
             
             if(debugMode)
             {
+                // render pose
                 for (int i = 0; i < mesh.JointsIndexs.Length; i++)
                 {
                     int parentIndex = restPose.GetParent(i);
@@ -223,12 +223,16 @@ namespace Game3D
                         line.Draw(GraphicsDevice, projection, view);
                     }
                 }
-                for (int i = 0; i < mesh.InverseBindMatrix.Length; i++)
+                // render bind pose
+                for (int i = 0; i < mesh.Skeleton.GetInvBindPose().Length; i++)
                 {
                     int parentIndex = restPose.GetParent(i);
-                    if (parentIndex != -1 && mesh.InverseBindMatrix.Length > parentIndex)
+                    if (parentIndex != -1 && mesh.Skeleton.GetBindPose().GetLocalTransform(i) != null)
                     {
-                        Line line = new Line(Matrix.Invert(mesh.InverseBindMatrix[i]).Translation, Matrix.Invert(mesh.InverseBindMatrix[parentIndex]).Translation, GraphicsDevice, Color.White);
+                        Transform transform = mesh.Skeleton.GetBindPose().GetGlobalTransform(i);
+                        Transform transformParent = mesh.Skeleton.GetBindPose().GetGlobalTransform(parentIndex);
+                        transformParent ??= new Transform();
+                        Line line = new Line(transform.Position, transformParent.Position, GraphicsDevice, Color.White);
                         line.SetWorld(modelWorld);
                         line.Draw(GraphicsDevice, projection, view);
                     }
@@ -238,10 +242,16 @@ namespace Game3D
             spriteBatch.Begin();
             spriteBatch.DrawString(font, "Use (up, down) to change the animation", Vector2.Zero, Color.White);
             spriteBatch.DrawString(font, $"Animation: {mesh.Clips[CurrentClip].mName}", Vector2.UnitY * 15, Color.White);
-            spriteBatch.DrawString(font, $"Debug Mode (Press F1): status: {debugMode} Current Bone: {(currentBone < mesh.JointsIndexs.Length && currentBone >= 0 ? mesh.Skeleton.GetJoinName(mesh.JointsIndexs[currentBone]) : currentBone) } (left, right)", Vector2.UnitY * 30, Color.White);
+            spriteBatch.DrawString(font, $"Debug Mode (Press F1): status: {debugMode} Current Bone: {(currentBone < mesh.JointsIndexs.Length && currentBone >= 0 ?  mesh.JointsIndexs[currentBone] : currentBone)} {(currentBone < mesh.JointsIndexs.Length && currentBone >= 0 ? mesh.Skeleton.GetJoinName(mesh.JointsIndexs[currentBone]) : currentBone) } (left, right)", Vector2.UnitY * 30, Color.White);
             spriteBatch.DrawString(font, $"FPS: {1.0f / (float)gameTime.ElapsedGameTime.TotalSeconds}", Vector2.UnitY * 45, Color.White);
+            /*spriteBatch.DrawString(font, $"Transform:\n " +
+                $"{mesh.Skeleton.GetRestPose().GetLocalTransform(mesh.JointsIndexs[currentBone]).Position.ToString()}\n" +
+                $"{mesh.Skeleton.GetRestPose().GetLocalTransform(mesh.JointsIndexs[currentBone]).Rotation.ToString()}\n" +
+                $"{mesh.Skeleton.GetRestPose().GetLocalTransform(mesh.JointsIndexs[currentBone]).Scale.ToString()}", Vector2.UnitY * 60, Color.White);*/
+            spriteBatch.DrawString(font, $"weights: {mesh.Weights[currentBone].ToString()}", Vector2.UnitY * 60, Color.White);
 
-            spriteBatch.End();
+
+          spriteBatch.End();
 
             base.Draw(gameTime);
         }
