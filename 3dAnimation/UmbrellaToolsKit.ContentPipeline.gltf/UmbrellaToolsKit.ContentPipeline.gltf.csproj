@@ -3,7 +3,7 @@
     <TargetFramework>net6.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="glTF2Loader" Version="1.0.0" />
+    <PackageReference Include="AssetRipper.SharpGLTF.Runtime" Version="1.0.2" />
     <PackageReference Include="MonoGame.Framework.Content.Pipeline" Version="3.8.1.303">
       <PrivateAssets>All</PrivateAssets>
     </PackageReference>
