@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
+using System.Collections.Generic;
 
 namespace UmbrellaToolsKit.Animation3D
 {
@@ -44,7 +45,6 @@ namespace UmbrellaToolsKit.Animation3D
         {
             restPose =  new Matrix[1]; 
             Skeleton.GetRestPose().GetMatrixPalette(ref restPose, _mesh.JointsIndexs);
-            Console.WriteLine(restPose.Length);
 
             basicEffect.Parameters["World"].SetValue(_modelWorld);
             basicEffect.Parameters["View"].SetValue(view);
@@ -67,9 +67,9 @@ namespace UmbrellaToolsKit.Animation3D
             foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
             {
                 pass.Apply();
-                /*if(_debugMode)
+                if(_debugMode)
                     graphicsDevice.DrawIndexedPrimitives(PrimitiveType.LineList, 0, 0, _mesh.Vertices.Length, 0, _mesh.Indices.Length / 3);
-                else*/
+                else
                     graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, _mesh.Vertices.Length, 0, _mesh.Indices.Length / 3);
             }
         }
