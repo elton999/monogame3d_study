@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
+using System.Collections.Generic;
 
 namespace UmbrellaToolsKit.Animation3D
 {
@@ -16,6 +17,10 @@ namespace UmbrellaToolsKit.Animation3D
 
         private Effect basicEffect;
         private Vector3 _lightPosition;
+        private Color _lightColor = Color.White;
+        private float _lightIntensity = 1.0f;
+
+        Matrix[] _restPose;
 
         private bool _debugMode = false;
         private int _currentBone = 0;
@@ -39,22 +44,22 @@ namespace UmbrellaToolsKit.Animation3D
             _debugMode= status;
             _currentBone = bone;
         }
-        Matrix[] restPose;
         public void Draw(GraphicsDevice graphicsDevice, Matrix projection, Matrix view)
         {
-            restPose =  new Matrix[1]; 
-            Skeleton.GetRestPose().GetMatrixPalette(ref restPose, _mesh.JointsIndexs);
-            Console.WriteLine(restPose.Length);
+            _restPose =  new Matrix[1]; 
+            Skeleton.GetRestPose().GetMatrixPalette(ref _restPose, _mesh.JointsIndexs);
 
             basicEffect.Parameters["World"].SetValue(_modelWorld);
             basicEffect.Parameters["View"].SetValue(view);
             basicEffect.Parameters["Projection"].SetValue(projection);
             basicEffect.Parameters["lightPosition"].SetValue(_lightPosition);
+            basicEffect.Parameters["lightColor"].SetValue(_lightColor.ToVector4());
+            basicEffect.Parameters["lightIntensity"].SetValue(_lightIntensity);
             basicEffect.Parameters["SpriteTexture"].SetValue(_texture);
             basicEffect.Parameters["debugMode"].SetValue(_debugMode);
             basicEffect.Parameters["currentBone"].SetValue(_currentBone);
             basicEffect.Parameters["Bones"].SetValue(_mesh.InverseBindMatrix);
-            basicEffect.Parameters["RestPose"].SetValue(restPose);
+            basicEffect.Parameters["RestPose"].SetValue(_restPose);
 
             graphicsDevice.BlendState = BlendState.Opaque;
             graphicsDevice.DepthStencilState = DepthStencilState.Default;
@@ -67,9 +72,9 @@ namespace UmbrellaToolsKit.Animation3D
             foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
             {
                 pass.Apply();
-                /*if(_debugMode)
+                if(_debugMode)
                     graphicsDevice.DrawIndexedPrimitives(PrimitiveType.LineList, 0, 0, _mesh.Vertices.Length, 0, _mesh.Indices.Length / 3);
-                else*/
+                else
                     graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, _mesh.Vertices.Length, 0, _mesh.Indices.Length / 3);
             }
         }
@@ -86,8 +91,8 @@ namespace UmbrellaToolsKit.Animation3D
             _indexBuffer = new IndexBuffer(graphicsDevice, typeof(short), _mesh.Indices.Length, BufferUsage.WriteOnly);
             _indexBuffer.SetData(_mesh.Indices);
 
-            restPose = new Matrix[1];
-            Skeleton.GetRestPose().GetMatrixPalette(ref restPose, _mesh.JointsIndexs);
+            _restPose = new Matrix[1];
+            Skeleton.GetRestPose().GetMatrixPalette(ref _restPose, _mesh.JointsIndexs);
         }
     }
 }

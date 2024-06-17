@@ -16,8 +16,8 @@ namespace UmbrellaToolsKit.Animation3D.Tracks
 
         protected override Quaternion Cast(float[] value)
         {
-            Quaternion r = new Quaternion(value[0], value[1], value[2], value[3]);
-            return Quaternion.Normalize(r);
+            Quaternion q = new Quaternion(value[0], value[1], value[2], value[3]);
+            return Quaternion.Normalize(q);
         }
 
         protected override Quaternion Hermite(float t, Quaternion p1, Quaternion s1, Quaternion _p2, Quaternion s2)

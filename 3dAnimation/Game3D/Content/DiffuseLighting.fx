@@ -14,6 +14,8 @@ float4x4 View;
 float4x4 Projection;
 
 float3 lightPosition;
+float4 lightColor;
+float lightIntensity;
 
 Texture2D SpriteTexture;
 
@@ -45,6 +47,11 @@ struct VertexShaderOutput
 	float4 Color : COLOR0;
     float2 TextureCoordinates : TEXCOORD1;
 };
+
+float4 LambertShading(float4 colorRefl, float lightInt, float4 normal, float4 lightDir)
+{
+    return colorRefl * lightInt * max(0, dot(normal, lightDir));
+}
 
 // code copied from: https://gist.github.com/mattatz/86fff4b32d198d0928d0fa4ff32cf6fa
 float4x4 inverse(float4x4 m) {
@@ -92,12 +99,10 @@ VertexShaderOutput MainVS(in VertexShaderInput input)
 
     matrix modelViewProjection = mul(mul(Projection, View), World);
 
-
     matrix skinMatrix = mul(input.Weights.x, mul(RestPose[int(input.Joints.x)], Bones[int(input.Joints.x)]));
     skinMatrix += mul(input.Weights.y, mul(RestPose[int(input.Joints.y)], Bones[int(input.Joints.y)]));
     skinMatrix += mul(input.Weights.z, mul(RestPose[int(input.Joints.z)], Bones[int(input.Joints.z)]));
     skinMatrix += mul(input.Weights.w, mul(RestPose[int(input.Joints.w)], Bones[int(input.Joints.w)]));
-
 
     float4 worldPosition = mul(mul(input.Position, skinMatrix), World);
     float4 viewPosition = mul(worldPosition, View);
@@ -107,10 +112,7 @@ VertexShaderOutput MainVS(in VertexShaderInput input)
 	float4 norm = normalize(mul(inverse(World), input.Normal));
 	float4 lightDir = normalize(float4(lightPosition, 0) - float4(fragPos[0], fragPos[1], fragPos[2], 1));
 
-	float diff = max(dot(norm, lightDir), 0);
-	float4 diffusse = diff * float4(1, 1, 1, 1);
-
-	output.Color = input.Color * (float4(0,0,0,0) + diffusse);
+    output.Color = LambertShading(lightColor, lightIntensity, norm, lightDir);
     output.TextureCoordinates = input.TextureCoordinates;
     
     if (debugMode)

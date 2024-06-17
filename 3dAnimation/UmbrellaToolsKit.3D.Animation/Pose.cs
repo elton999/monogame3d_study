@@ -28,6 +28,8 @@ namespace UmbrellaToolsKit.Animation3D
 
         public Transform GetGlobalTransform(int index)
         {
+            if(index < 0)
+                return new Transform();
             Transform result = mJoints[index];
             int parentIndex = GetParent(index);
             int i = 0;
