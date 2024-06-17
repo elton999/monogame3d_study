@@ -14,6 +14,7 @@ float4x4 View;
 float4x4 Projection;
 
 float3 lightPosition;
+float4 lightColor;
 
 Texture2D SpriteTexture;
 
@@ -110,7 +111,7 @@ VertexShaderOutput MainVS(in VertexShaderInput input)
 	float4 norm = normalize(mul(inverse(World), input.Normal));
 	float4 lightDir = normalize(float4(lightPosition, 0) - float4(fragPos[0], fragPos[1], fragPos[2], 1));
 
-    output.Color = LambertShading(float4(1, 1, 1, 1), 1.0f, norm, lightDir);
+    output.Color = LambertShading(lightColor, 1.0f, norm, lightDir);
     output.TextureCoordinates = input.TextureCoordinates;
     
     if (debugMode)

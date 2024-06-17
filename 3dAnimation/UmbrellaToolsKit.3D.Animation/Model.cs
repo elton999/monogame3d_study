@@ -17,6 +17,9 @@ namespace UmbrellaToolsKit.Animation3D
 
         private Effect basicEffect;
         private Vector3 _lightPosition;
+        private Color _lightColor = Color.White;
+
+        Matrix[] _restPose;
 
         private bool _debugMode = false;
         private int _currentBone = 0;
@@ -40,21 +43,21 @@ namespace UmbrellaToolsKit.Animation3D
             _debugMode= status;
             _currentBone = bone;
         }
-        Matrix[] restPose;
         public void Draw(GraphicsDevice graphicsDevice, Matrix projection, Matrix view)
         {
-            restPose =  new Matrix[1]; 
-            Skeleton.GetRestPose().GetMatrixPalette(ref restPose, _mesh.JointsIndexs);
+            _restPose =  new Matrix[1]; 
+            Skeleton.GetRestPose().GetMatrixPalette(ref _restPose, _mesh.JointsIndexs);
 
             basicEffect.Parameters["World"].SetValue(_modelWorld);
             basicEffect.Parameters["View"].SetValue(view);
             basicEffect.Parameters["Projection"].SetValue(projection);
             basicEffect.Parameters["lightPosition"].SetValue(_lightPosition);
+            basicEffect.Parameters["lightColor"].SetValue(_lightColor.ToVector4());
             basicEffect.Parameters["SpriteTexture"].SetValue(_texture);
             basicEffect.Parameters["debugMode"].SetValue(_debugMode);
             basicEffect.Parameters["currentBone"].SetValue(_currentBone);
             basicEffect.Parameters["Bones"].SetValue(_mesh.InverseBindMatrix);
-            basicEffect.Parameters["RestPose"].SetValue(restPose);
+            basicEffect.Parameters["RestPose"].SetValue(_restPose);
 
             graphicsDevice.BlendState = BlendState.Opaque;
             graphicsDevice.DepthStencilState = DepthStencilState.Default;
@@ -86,8 +89,8 @@ namespace UmbrellaToolsKit.Animation3D
             _indexBuffer = new IndexBuffer(graphicsDevice, typeof(short), _mesh.Indices.Length, BufferUsage.WriteOnly);
             _indexBuffer.SetData(_mesh.Indices);
 
-            restPose = new Matrix[1];
-            Skeleton.GetRestPose().GetMatrixPalette(ref restPose, _mesh.JointsIndexs);
+            _restPose = new Matrix[1];
+            Skeleton.GetRestPose().GetMatrixPalette(ref _restPose, _mesh.JointsIndexs);
         }
     }
 }
