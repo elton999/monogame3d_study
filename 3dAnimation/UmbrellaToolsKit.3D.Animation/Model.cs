@@ -18,6 +18,7 @@ namespace UmbrellaToolsKit.Animation3D
         private Effect basicEffect;
         private Vector3 _lightPosition;
         private Color _lightColor = Color.White;
+        private float _lightIntensity = 1.0f;
 
         Matrix[] _restPose;
 
@@ -53,6 +54,7 @@ namespace UmbrellaToolsKit.Animation3D
             basicEffect.Parameters["Projection"].SetValue(projection);
             basicEffect.Parameters["lightPosition"].SetValue(_lightPosition);
             basicEffect.Parameters["lightColor"].SetValue(_lightColor.ToVector4());
+            basicEffect.Parameters["lightIntensity"].SetValue(_lightIntensity);
             basicEffect.Parameters["SpriteTexture"].SetValue(_texture);
             basicEffect.Parameters["debugMode"].SetValue(_debugMode);
             basicEffect.Parameters["currentBone"].SetValue(_currentBone);
