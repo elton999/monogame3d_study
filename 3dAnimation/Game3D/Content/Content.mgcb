@@ -13,6 +13,7 @@
 /reference:..\..\Newtonsoft.Json.dll
 /reference:..\..\glTFLoader.dll
 /reference:..\..\UmbrellaToolsKit.ContentPipeline.gltf\bin\Debug\net6.0\UmbrellaToolsKit.ContentPipeline.gltf.dll
+/reference:..\..\UmbrellaToolsKit.3D.Animation\bin\Debug\net6.0\UmbrellaToolsKit.Animation3D.dll
 
 #---------------------------------- Content ---------------------------------#
 
