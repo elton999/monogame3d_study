@@ -8,6 +8,7 @@ namespace _3dAnimation
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
         private Model _model;
+        private Mesh _mesh;
 
         public Game1()
         {
@@ -24,7 +25,8 @@ namespace _3dAnimation
         protected override void LoadContent()
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
-            _model = new Model(_graphics.GraphicsDevice);
+            _mesh = new Mesh(@"Content/Woman.gltf");
+            _model = new Model(_graphics.GraphicsDevice, _mesh);
         }
 
         protected override void Update(GameTime gameTime)
