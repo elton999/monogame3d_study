@@ -31,7 +31,8 @@ public class Mesh
     {
         _gltf = Interface.LoadModel(pathModel);
         LoadMesh();
-        LoadAnimation();
+        LoadJoints();
+        LoadAnimations();
 
         try
         {
@@ -47,7 +48,7 @@ public class Mesh
         }
     }
 
-    private void LoadAnimation()
+    private void LoadJoints()
     {
         byte[][] uriBytesList;
         var weights = new List<Vector4>();
@@ -94,6 +95,34 @@ public class Mesh
         _weights = weights.ToArray();
         _joints = joints.ToArray();
         _indices = indices.ToArray();
+    }
+
+    private void LoadAnimations()
+    {
+        var joints = new Joint[_gltf.Nodes.Length];
+        for(int nodeIndex = 0; nodeIndex < _gltf.Nodes.Length; nodeIndex++)
+        {
+            var node = _gltf.Nodes[nodeIndex];
+            
+            if (joints[nodeIndex] == null)
+                joints[nodeIndex] = new Joint(node.Name);
+
+            joints[nodeIndex].SetName(node.Name);
+
+            if (node.Children == null) continue;
+
+            for (int childrenIndex = 0; childrenIndex < node.Children.Length; childrenIndex++)
+            {
+                int index = node.Children[childrenIndex];
+                if (joints[index] == null)
+                    joints[index] = new Joint();
+
+                joints[index].SetParent(joints[nodeIndex]);
+            }
+        }
+
+        var skeleton = new Skeleton(joints);
+        Console.WriteLine(skeleton.ToString());
     }
 
     private void LoadMesh()
