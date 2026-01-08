@@ -73,41 +73,19 @@ public class Mesh
                 byte[] uriBytes = uriBytesList[bufferView.Buffer];
 
                 //Joints 
-                if (primitives[meshesIndex].Attributes.ContainsKey("JOINTS_0") && primitives[meshesIndex].Attributes["JOINTS_0"] == accessorIndex && accessor.Type == glTFLoader.Schema.Accessor.TypeEnum.VEC4)
+                if (primitives[meshesIndex].Attributes.ContainsKey("JOINTS_0") && primitives[meshesIndex].Attributes["JOINTS_0"] == accessorIndex && accessor.Type == Accessor.TypeEnum.VEC4)
                 {
-                    var listJoints = _gltf.Skins[0].Joints;
-                    for (int n = bufferView.ByteOffset; n < bufferView.ByteOffset + bufferView.ByteLength; n++)
-                    {
-                        float x = uriBytes[n];
-                        n++;
-                        float y = uriBytes[n];
-                        n++;
-                        float z = uriBytes[n];
-                        n++;
-                        float w = uriBytes[n];
-                        joints.Add(new Vector4(x, y, z, w));
-                    }
+                    joints.AddRange(GetVector4List(bufferView, uriBytes));
                 }
 
                 //Weights 
-                if (primitives[meshesIndex].Attributes.ContainsKey("WEIGHTS_0") && primitives[meshesIndex].Attributes["WEIGHTS_0"] == accessorIndex && accessor.Type == glTFLoader.Schema.Accessor.TypeEnum.VEC4)
+                if (primitives[meshesIndex].Attributes.ContainsKey("WEIGHTS_0") && primitives[meshesIndex].Attributes["WEIGHTS_0"] == accessorIndex && accessor.Type == Accessor.TypeEnum.VEC4)
                 {
-                    for (int n = bufferView.ByteOffset; n < bufferView.ByteOffset + bufferView.ByteLength; n += 4)
-                    {
-
-                        float x = BitConverter.ToSingle(uriBytes, n);
-                        n += 4;
-                        float y = BitConverter.ToSingle(uriBytes, n);
-                        n += 4;
-                        float z = BitConverter.ToSingle(uriBytes, n);
-                        n += 4;
-                        float w = BitConverter.ToSingle(uriBytes, n);
-                        weights.Add(new Vector4(x, y, z, w));
-                    }
+                    weights.AddRange(GetVector4List(bufferView, uriBytes));
                 }
 
                 // Indicies
-                if (accessor.ComponentType == glTFLoader.Schema.Accessor.ComponentTypeEnum.UNSIGNED_SHORT)
+                if (accessor.ComponentType == Accessor.ComponentTypeEnum.UNSIGNED_SHORT)
                 {
                     for (int n = bufferView.ByteOffset; n < bufferView.ByteOffset + bufferView.ByteLength; n += 2)
                     {
@@ -119,8 +97,8 @@ public class Mesh
         }
 
         _weights = weights.ToArray();
-        _indices = indices.ToArray();
         _joints = joints.ToArray();
+        _indices = indices.ToArray();
     }
 
     private void LoadMesh()
@@ -147,20 +125,9 @@ public class Mesh
                 var bufferView = _gltf.BufferViews[bufferIndex];
                 byte[] uriBytes = uriBytesList[bufferView.Buffer];
 
-                if (primitives[meshesIndex].Attributes["POSITION"] == accessorIndex && accessor.Type == glTFLoader.Schema.Accessor.TypeEnum.VEC3)
+                if (primitives[meshesIndex].Attributes["POSITION"] == accessorIndex && accessor.Type == Accessor.TypeEnum.VEC3)
                 {
-                    float[] ScalingFactorForVariables = new float[3] { 1.0f, 1.0f, 1.0f };
-
-                    for (int n = bufferView.ByteOffset; n < bufferView.ByteOffset + bufferView.ByteLength; n += 4)
-                    {
-                        float x = BitConverter.ToSingle(uriBytes, n) / ScalingFactorForVariables[0];
-                        n += 4;
-                        float y = BitConverter.ToSingle(uriBytes, n) / ScalingFactorForVariables[1];
-                        n += 4;
-                        float z = BitConverter.ToSingle(uriBytes, n) / ScalingFactorForVariables[2];
-
-                        vertices.Add(new Vector3(x, y, z));
-                    }
+                    vertices.AddRange(GetVector3List(bufferView, uriBytes));
                 }
             }
         }
@@ -171,5 +138,45 @@ public class Mesh
             verticesTemp.Add(new VertexPositionColor(vertex, Color.White));
         }
         _vertices = verticesTemp.ToArray();
+    }
+
+    private List<Vector3> GetVector3List(BufferView bufferView, byte[] uriBytes, float[] ScalingFactorForVariables = null)
+    {
+        var vectorListResult = new List<Vector3>();
+        if (ScalingFactorForVariables == null)
+            ScalingFactorForVariables = new float[3] { 1f, 1f, 1f };
+
+        for (int n = bufferView.ByteOffset; n < bufferView.ByteOffset + bufferView.ByteLength; n += 4)
+        {
+            float x = BitConverter.ToSingle(uriBytes, n) / ScalingFactorForVariables[0];
+            n += 4;
+            float y = BitConverter.ToSingle(uriBytes, n) / ScalingFactorForVariables[1];
+            n += 4;
+            float z = BitConverter.ToSingle(uriBytes, n) / ScalingFactorForVariables[2];
+
+            vectorListResult.Add(new Vector3(x, y, z));
+        }
+
+        return vectorListResult;
+    }
+
+    private List<Vector4> GetVector4List(BufferView bufferView, byte[] uriBytes)
+    {
+        var vectorListResult = new List<Vector4>();
+        var listJoints = _gltf.Skins[0].Joints;
+        for (int n = bufferView.ByteOffset; n < bufferView.ByteOffset + bufferView.ByteLength; n++)
+        {
+            float x = uriBytes[n];
+            n++;
+            float y = uriBytes[n];
+            n++;
+            float z = uriBytes[n];
+            n++;
+            float w = uriBytes[n];
+            var tempVector = new Vector4(x, y, z, w);
+            vectorListResult.Add(tempVector);
+        }
+
+        return vectorListResult;
     }
 }
