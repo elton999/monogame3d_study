@@ -53,12 +53,7 @@ public class Mesh
         var weights = new List<Vector4>();
         var joints = new List<Vector4>();
         var indices = new List<short>();
-
-        uriBytesList = new byte[_gltf.Buffers.Length][];
-        for (int bytesListIndex = 0; bytesListIndex < uriBytesList.Length; bytesListIndex++)
-        {
-            uriBytesList[bytesListIndex] = Convert.FromBase64String(_gltf.Buffers[bytesListIndex].Uri.Replace("data:application/octet-stream;base64,", ""));
-        }
+        uriBytesList = GetBytesList();
 
         for (int meshesIndex = 0; meshesIndex < _gltf.Meshes.Length; meshesIndex++)
         {
@@ -106,11 +101,7 @@ public class Mesh
         byte[][] uriBytesList;
         var vertices = new List<Vector3>();
 
-        uriBytesList = new byte[_gltf.Buffers.Length][];
-        for (int bytesListIndex = 0; bytesListIndex < uriBytesList.Length; bytesListIndex++)
-        {
-            uriBytesList[bytesListIndex] = Convert.FromBase64String(_gltf.Buffers[bytesListIndex].Uri.Replace("data:application/octet-stream;base64,", ""));
-        }
+        uriBytesList = GetBytesList();
 
         for (int meshesIndex = 0; meshesIndex < _gltf.Meshes.Length; meshesIndex++)
         {
@@ -138,6 +129,17 @@ public class Mesh
             verticesTemp.Add(new VertexPositionColor(vertex, Color.White));
         }
         _vertices = verticesTemp.ToArray();
+    }
+
+    private byte[][] GetBytesList()
+    {
+        byte[][] uriBytesList = new byte[_gltf.Buffers.Length][];
+        for (int bytesListIndex = 0; bytesListIndex < uriBytesList.Length; bytesListIndex++)
+        {
+            uriBytesList[bytesListIndex] = Convert.FromBase64String(_gltf.Buffers[bytesListIndex].Uri.Replace("data:application/octet-stream;base64,", ""));
+        }
+
+        return uriBytesList;
     }
 
     private List<Vector3> GetVector3List(BufferView bufferView, byte[] uriBytes, float[] ScalingFactorForVariables = null)
