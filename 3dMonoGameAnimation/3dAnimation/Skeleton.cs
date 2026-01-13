@@ -1,6 +1,7 @@
-﻿using System;
-using System.Linq;
+﻿using glTFLoader.Schema;
 using Microsoft.Xna.Framework;
+using System;
+using System.Linq;
 
 namespace _3dAnimation
 {
@@ -12,6 +13,8 @@ namespace _3dAnimation
         public Joint[] Joints => _joints;
         public Matrix[] SkinMatrices;
         public AnimationClip[] AnimationClips => _animationClips;
+
+        public string _currentAnimation;
 
         public Skeleton() { }
 
@@ -35,6 +38,14 @@ namespace _3dAnimation
 
         public void Update()
         {
+            if (string.IsNullOrEmpty(_currentAnimation))
+            {
+                for (int i = 0; i <SkinMatrices.Length; i++)
+                    SkinMatrices[i] = Matrix.Identity;
+
+                return;
+            }
+
             foreach (var joint in _joints)
             {
                 if (!joint.HasParent)

@@ -40,7 +40,7 @@ namespace _3dAnimation
 
         protected override void Update(GameTime gameTime)
         {
-            //_mesh.Skeleton.Update();
+            _mesh.Skeleton.Update();
             base.Update(gameTime);
         }
 
