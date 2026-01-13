@@ -4,21 +4,33 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Metrics;
 using System.IO;
 
 namespace _3dAnimation;
 public class Mesh
 {
-    private VertexPositionColor[] _vertices;
+    private ModelVertexType[] _vertices;
     private Vector4[] _weights;
     private Vector4[] _joints;
     private short[] _indices;
+    private Vector2[] _textureCoord;
+    private Vector3[] _normals;
+    private Vector3[] _meshVertices;
+    private Matrix[] _inverseBindMatrix;
+    private int[] _jointsIndexs;
+
+    private Skeleton _skeleton;
     private Gltf _gltf;
 
-    public VertexPositionColor[] Vertices => _vertices;
+    public ModelVertexType[] Vertices => _vertices;
     public Vector4[] Weights => _weights;
     public Vector4[] Joints => _joints;
     public short[] Indices => _indices;
+    public Vector2[] TextureCoord => _textureCoord;
+    public Vector3[] Normals => _normals;
+    public Matrix[] InverseBindMatrix => _inverseBindMatrix;
+    public Skeleton Skeleton => _skeleton;
 
     public Mesh(string pathModel)
     {
@@ -33,19 +45,6 @@ public class Mesh
         LoadMesh();
         LoadJoints();
         LoadAnimations();
-
-        try
-        {
-           
-        }
-        catch (FileNotFoundException)
-        {
-            Console.WriteLine($"Error: The file '{pathModel}' was not found.");
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine($"An error occurred: {e.Message}");
-        }
     }
 
     private void LoadJoints()
@@ -54,6 +53,8 @@ public class Mesh
         var weights = new List<Vector4>();
         var joints = new List<Vector4>();
         var indices = new List<short>();
+        var normals = new List<Vector3>();
+        var textureCoords = new List<Vector2>();
         uriBytesList = GetBytesList();
 
         for (int meshesIndex = 0; meshesIndex < _gltf.Meshes.Length; meshesIndex++)
@@ -71,13 +72,54 @@ public class Mesh
                 //Joints 
                 if (primitives[meshesIndex].Attributes.ContainsKey("JOINTS_0") && primitives[meshesIndex].Attributes["JOINTS_0"] == accessorIndex && accessor.Type == Accessor.TypeEnum.VEC4)
                 {
-                    joints.AddRange(GetVector4List(bufferView, uriBytes));
+                    var listJoints = _gltf.Skins[0].Joints;
+                    for (int n = bufferView.ByteOffset; n < bufferView.ByteOffset + bufferView.ByteLength; n++)
+                    {
+                        float x = uriBytes[n];
+                        n++;
+                        float y = uriBytes[n];
+                        n++;
+                        float z = uriBytes[n];
+                        n++;
+                        float w = uriBytes[n];
+                        joints.Add(new Vector4(x, y, z, w));
+                    }
                 }
 
                 //Weights 
                 if (primitives[meshesIndex].Attributes.ContainsKey("WEIGHTS_0") && primitives[meshesIndex].Attributes["WEIGHTS_0"] == accessorIndex && accessor.Type == Accessor.TypeEnum.VEC4)
                 {
-                    weights.AddRange(GetVector4List(bufferView, uriBytes));
+                    for (int n = bufferView.ByteOffset; n < bufferView.ByteOffset + bufferView.ByteLength; n += 4)
+                    {
+
+                        float x = BitConverter.ToSingle(uriBytes, n);
+                        n += 4;
+                        float y = BitConverter.ToSingle(uriBytes, n);
+                        n += 4;
+                        float z = BitConverter.ToSingle(uriBytes, n);
+                        n += 4;
+                        float w = BitConverter.ToSingle(uriBytes, n);
+                        weights.Add(new Vector4(x, y, z, w));
+                    }
+                }
+
+                // Normals
+                if (primitives[meshesIndex].Attributes.ContainsKey("NORMAL") && primitives[meshesIndex].Attributes["NORMAL"] == accessorIndex && accessor.Type == Accessor.TypeEnum.VEC3)
+                {
+                    normals.AddRange(GetVector3List(bufferView, uriBytes));
+                }
+
+                //Texture Coords
+                if (primitives[meshesIndex].Attributes.ContainsKey("NORMAL") && primitives[meshesIndex].Attributes.ContainsKey("TEXCOORD_0") && primitives[meshesIndex].Attributes["TEXCOORD_0"] == accessorIndex && accessor.Type == Accessor.TypeEnum.VEC2)
+                {
+                    for (int n = bufferView.ByteOffset; n < bufferView.ByteOffset + bufferView.ByteLength; n += 4)
+                    {
+                        float x = BitConverter.ToSingle(uriBytes, n);
+                        n += 4;
+                        float y = BitConverter.ToSingle(uriBytes, n);
+
+                        textureCoords.Add(new Vector2(x, y));
+                    }
                 }
 
                 // Indicies
@@ -90,39 +132,240 @@ public class Mesh
                     }
                 }
             }
+
+            SetInverseBindMatrix(uriBytesList);
+
         }
 
         _weights = weights.ToArray();
         _joints = joints.ToArray();
         _indices = indices.ToArray();
+        _normals = normals.ToArray();
+        _textureCoord = textureCoords.ToArray();
+    }
+
+    private void SetInverseBindMatrix(byte[][] uriBytesList)
+    {
+        int accessorIndex = _gltf.Skins[0].InverseBindMatrices.Value;
+        var accessor = _gltf.Accessors[accessorIndex];
+
+        var bufferView = _gltf.BufferViews[accessor.BufferView.Value];
+        byte[] buffer = uriBytesList[bufferView.Buffer];
+
+        int matrixCount = accessor.Count;
+        int stride = bufferView.ByteStride ?? (16 * 4); // 64 bytes
+
+        int offset = bufferView.ByteOffset + accessor.ByteOffset;
+
+        var inverseBind = new Matrix[matrixCount];
+
+        for (int matrixIndex = 0; matrixIndex < matrixCount; matrixIndex++)
+        {
+            Matrix m = new Matrix();
+
+            int baseOffset = offset + matrixIndex * stride;
+
+            for (int j = 0; j < 16; j++)
+            {
+                m[j] = BitConverter.ToSingle(buffer, baseOffset + j * 4);
+            }
+
+            inverseBind[matrixIndex] = m;
+        }
+
+        _inverseBindMatrix = inverseBind;
+        _jointsIndexs = _gltf.Skins[0].Joints;
     }
 
     private void LoadAnimations()
     {
-        var joints = new Joint[_gltf.Nodes.Length];
-        for(int nodeIndex = 0; nodeIndex < _gltf.Nodes.Length; nodeIndex++)
+        var skin = _gltf.Skins[0];
+        var jointNodes = skin.Joints;
+
+        int jointCount = jointNodes.Length;
+
+        var joints = new Joint[jointCount];
+
+        Dictionary<int, int> nodeToJoint = new();
+
+        for (int jointIndex = 0; jointIndex < jointCount; jointIndex++)
         {
+            int nodeIndex = jointNodes[jointIndex];
+            nodeToJoint[nodeIndex] = jointIndex;
+
             var node = _gltf.Nodes[nodeIndex];
-            
-            if (joints[nodeIndex] == null)
-                joints[nodeIndex] = new Joint(node.Name);
+            joints[jointIndex] = new Joint(node.Name);
+        }
 
-            joints[nodeIndex].SetName(node.Name);
+        for (int i = 0; i < jointCount; i++)
+        {
+            int nodeIndex = jointNodes[i];
+            var node = _gltf.Nodes[nodeIndex];
 
-            if (node.Children == null) continue;
+            if (node.Children == null)
+                continue;
 
-            for (int childrenIndex = 0; childrenIndex < node.Children.Length; childrenIndex++)
+            foreach (int childNodeIndex in node.Children)
             {
-                int index = node.Children[childrenIndex];
-                if (joints[index] == null)
-                    joints[index] = new Joint();
+                if (!nodeToJoint.TryGetValue(childNodeIndex, out int childJointIndex))
+                    continue;
 
-                joints[index].SetParent(joints[nodeIndex]);
+                joints[childJointIndex].SetParent(joints[i]);
             }
         }
 
-        var skeleton = new Skeleton(joints);
-        Console.WriteLine(skeleton.ToString());
+        _skeleton = new Skeleton(joints);
+
+        var uriBytesList = GetBytesList();
+        for (int animationIndex = 0; animationIndex < _gltf.Animations.Length; animationIndex ++)
+        {
+            var animation = _gltf.Animations[animationIndex];
+            var animationClip = new AnimationClip(animation.Name);
+            _skeleton.AddAnimationClip(animationClip);
+
+            Console.WriteLine(animationClip.Name);
+
+            for (int channelIndex = 0; channelIndex < animation.Channels.Length; channelIndex++)
+            {
+                var channel = animation.Channels[channelIndex];
+                var sampler = animation.Samplers[channel.Sampler];
+
+                int input = sampler.Input;
+                int output = sampler.Output;
+
+                for (int accessorIndex = 0; accessorIndex < _gltf.Accessors.Length; accessorIndex++)
+                {
+                    var accessor = _gltf.Accessors[accessorIndex];
+                    int bufferIndex = (int)accessor.BufferView;
+
+                    if (channel.Target.Path == AnimationChannelTarget.PathEnum.rotation)
+                    {
+                        if (bufferIndex == output && accessor.Type == Accessor.TypeEnum.VEC4)
+                        {
+                            var bufferView = _gltf.BufferViews[bufferIndex];
+                            byte[] uriBytes = uriBytesList[bufferView.Buffer];
+
+                            int frameCount = 0;
+                            int byteOffset = bufferView.ByteOffset;
+                            int byteTotal = byteOffset + bufferView.ByteLength;
+
+                            for (int n = byteOffset; n < byteTotal; n += 4)
+                            {
+                                float x = BitConverter.ToSingle(uriBytes, n);
+                                n += 4;
+                                float y = BitConverter.ToSingle(uriBytes, n);
+                                n += 4;
+                                float z = BitConverter.ToSingle(uriBytes, n);
+                                n += 4;
+                                float w = BitConverter.ToSingle(uriBytes, n);
+
+                                float[] result = new float[4] { x, y, z, w };
+                                frameCount++;
+                            }
+                        } // floats output
+                    }
+
+                    if (channel.Target.Path == AnimationChannelTarget.PathEnum.translation)
+                    {
+                        if (bufferIndex == output && accessor.Type == Accessor.TypeEnum.VEC3)
+                        {
+                            var bufferView = _gltf.BufferViews[bufferIndex];
+                            byte[] uriBytes = uriBytesList[bufferView.Buffer];
+
+                            int frameCount = 0;
+                            int byteOffset = bufferView.ByteOffset;
+                            int byteTotal = byteOffset + bufferView.ByteLength;
+
+                            for (int n = byteOffset; n < byteTotal; n += 4)
+                            {
+                                float x = BitConverter.ToSingle(uriBytes, n);
+                                n += 4;
+                                float y = BitConverter.ToSingle(uriBytes, n);
+                                n += 4;
+                                float z = BitConverter.ToSingle(uriBytes, n);
+
+                                float[] result = new float[3] { x, y, z };
+                                frameCount++;
+                                animationClip.AddTranslation(frameCount, (int)channel.Target.Node, new VectorFrame() { mValue = result });
+                            }
+                        } // floats output
+                    }
+
+                    if (channel.Target.Path == AnimationChannelTarget.PathEnum.scale)
+                    {
+                        if (bufferIndex == output && accessor.Type == Accessor.TypeEnum.VEC3)
+                        {
+                            var bufferView = _gltf.BufferViews[bufferIndex];
+                            byte[] uriBytes = uriBytesList[bufferView.Buffer];
+
+                            int frameCount = 0;
+                            int byteOffset = bufferView.ByteOffset;
+                            int byteTotal = byteOffset + bufferView.ByteLength;
+
+                            for (int n = byteOffset; n < byteTotal; n += 4)
+                            {
+                                float x = BitConverter.ToSingle(uriBytes, n);
+                                n += 4;
+                                float y = BitConverter.ToSingle(uriBytes, n);
+                                n += 4;
+                                float z = BitConverter.ToSingle(uriBytes, n);
+
+                                float[] result = new float[3] { x, y, z };
+                                frameCount++;
+                                animationClip.AddScalar(frameCount, (int)channel.Target.Node, new ScalarFrame() { mValue = result });
+                            }
+                        } // floats output
+                    }
+
+                    if (bufferIndex == input && accessor.Type == Accessor.TypeEnum.SCALAR)
+                    {
+                        var bufferView = _gltf.BufferViews[bufferIndex];
+                        byte[] uriBytes = uriBytesList[bufferView.Buffer];
+
+                        int frameCount = 0;
+                        int byteOffset = bufferView.ByteOffset;
+                        int byteTotal = byteOffset + bufferView.ByteLength;
+
+                        for (int n = byteOffset; n < byteTotal; n += 4)
+                        {
+                            float x = BitConverter.ToSingle(uriBytes, n);
+
+                            frameCount++;
+                            animationClip.AddFrameTimer(frameCount, x);
+                        }
+                    } // time input
+                }
+            }
+        }
+
+        for(int jointIndex = 0; jointIndex < skin.Joints.Length; jointIndex++)
+        {
+            int nodeIndex = skin.Joints[jointIndex];
+            var node = _gltf.Nodes[nodeIndex];
+
+            Transform result = new Transform();
+
+            if (node.Translation != null)
+                result.Translation.mValue = new float[] { node.Translation[0], node.Translation[1], node.Translation[2] };
+
+            if (node.Rotation != null)
+                result.Rotation.mValue = new float[] { node.Rotation[0], node.Rotation[1], node.Rotation[2], node.Rotation[3] };
+
+            if (node.Scale != null)
+                result.Scalar.mValue = new float[] { node.Scale[0], node.Scale[1], node.Scale[2] };
+
+            _skeleton.Joints[jointIndex].SetTransform(result);
+        }
+
+
+        var verticesTemp = new List<ModelVertexType>();
+        int countIndex = 0;
+        foreach (var vertex in _meshVertices)
+        {
+            verticesTemp.Add(new ModelVertexType(vertex, Color.White, Normals[countIndex], TextureCoord[countIndex], Joints[countIndex], Weights[countIndex]));
+            countIndex++;
+        }
+        _vertices = verticesTemp.ToArray();
     }
 
     private void LoadMesh()
@@ -152,12 +395,7 @@ public class Mesh
             }
         }
 
-        var verticesTemp = new List<VertexPositionColor>();
-        foreach (var vertex in vertices)
-        {
-            verticesTemp.Add(new VertexPositionColor(vertex, Color.White));
-        }
-        _vertices = verticesTemp.ToArray();
+        _meshVertices = vertices.ToArray();
     }
 
     private byte[][] GetBytesList()

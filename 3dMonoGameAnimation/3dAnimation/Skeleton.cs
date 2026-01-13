@@ -1,41 +1,85 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Xna.Framework;
 
-namespace _3dAnimation;
-
-public class Skeleton : IFormattable
+namespace _3dAnimation
 {
-    private Joint[] _joins = new Joint[] { };
-
-    public Joint[] Joins => _joins.ToArray();
-
-    public Skeleton() { }
-    
-    public Skeleton(List<Joint> joins)
+    public class Skeleton : IFormattable
     {
-        _joins = joins.ToArray();
-    }
+        private Joint[] _joints = Array.Empty<Joint>();
+        private AnimationClip[] _animationClips = Array.Empty<AnimationClip>();
 
-    public Skeleton(Joint[] joins)
-    {
-        _joins = joins;
-    }
+        public Joint[] Joints => _joints;
+        public Matrix[] SkinMatrices;
+        public AnimationClip[] AnimationClips => _animationClips;
 
-    public string ToString()
-    {
-        string result = string.Empty;
+        public Skeleton() { }
 
-        foreach (Joint joint in _joins)
+        public Skeleton(Joint[] joints)
         {
-            result += joint.Name + "\n";
+            _joints = joints;
+            SkinMatrices = new Matrix[joints.Length];
         }
 
-        return result;
-    }
+        public void ComputeBindPose()
+        {
+            foreach (var joint in _joints)
+            {
+                if (!joint.HasParent)
+                    joint.UpdateWorld(Matrix.Identity);
+            }
 
-    public string ToString(string format, IFormatProvider formatProvider)
-    {
-        return ToString();
+            foreach (var joint in _joints)
+                joint.ComputeBindPose();
+        }
+
+        public void Update()
+        {
+            foreach (var joint in _joints)
+            {
+                if (!joint.HasParent)
+                    joint.UpdateWorld(Matrix.Identity);
+            }
+
+            for (int i = 0; i < _joints.Length; i++)
+            {
+                SkinMatrices[i] = _joints[i].WorldMatrix * _joints[i].InversePose;
+            }
+        }
+
+        public void AddAnimationClip(AnimationClip animationClip)
+        {
+            var list = _animationClips.ToList();
+            list.Add(animationClip);
+            _animationClips = list.ToArray();
+        }
+
+
+        private void SetString(Joint root, string prefix, ref string result)
+        {
+            foreach (Joint joint in root.Children)
+            {
+                result += $"{prefix}{joint.Name} {joint.LocalMatrix.Translation}\n";
+                SetString(joint, prefix + "-", ref result);
+            }
+        }
+
+        public override string ToString()
+        {
+            var roots = _joints.Where(x => !x.HasParent).ToList();
+
+            if (roots.Count == 0)
+                return "no joints";
+
+            var root = roots[0];
+            string result = $"{root.Name} {root.LocalMatrix.Translation}\n";
+            SetString(root, "-", ref result);
+            return result;
+        }
+
+        public string ToString(string format, IFormatProvider formatProvider)
+        {
+            return ToString();
+        }
     }
 }
