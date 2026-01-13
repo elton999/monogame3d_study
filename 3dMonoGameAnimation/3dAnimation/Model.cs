@@ -36,20 +36,12 @@ public class Model
 
     public void Draw()
     {
-        for (int i = 0; i < _mesh.Skeleton.SkinMatrices.Length; i++)
-            _mesh.Skeleton.SkinMatrices[i] = Matrix.Identity;
-
         _world *= Matrix.CreateRotationY(MathHelper.ToRadians(0.5f));
 
         _basicEffect.Parameters["World"].SetValue(_world);
         _basicEffect.Parameters["View"].SetValue(_view);
         _basicEffect.Parameters["Projection"].SetValue(_projection);
-        _basicEffect.Parameters["lightPosition"].SetValue(_lightPosition);
-        _basicEffect.Parameters["lightColor"].SetValue(_lightColor.ToVector4());
-        _basicEffect.Parameters["lightIntensity"].SetValue(_lightIntensity);
         _basicEffect.Parameters["SpriteTexture"].SetValue(_texture);
-        _basicEffect.Parameters["debugMode"].SetValue(false);
-        _basicEffect.Parameters["currentBone"].SetValue(1);
         _basicEffect.Parameters["Bones"].SetValue(_mesh.Skeleton.SkinMatrices);
 
         _graphicsDevice.BlendState = BlendState.Opaque;
