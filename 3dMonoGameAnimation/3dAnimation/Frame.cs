@@ -25,7 +25,7 @@ public class VectorFrame : Frame
 {
     public VectorFrame()
     {
-        mValue = new float[] { 0f, 0f, 0f, 1f };
+        mValue = new float[] { 0f, 0f, 0f };
     }
 
     public Vector3 GetVector3()
@@ -38,7 +38,7 @@ public class QuaternionFrame : Frame
 {
     public QuaternionFrame()
     {
-        mValue = new float[4];
+        mValue = new float[] { 0f, 0f, 0f, 1f };
     }
 
     public Quaternion GetQuaternion()

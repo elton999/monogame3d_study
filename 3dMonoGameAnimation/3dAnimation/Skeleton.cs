@@ -14,7 +14,8 @@ namespace _3dAnimation
         public Matrix[] SkinMatrices;
         public AnimationClip[] AnimationClips => _animationClips;
 
-        public string _currentAnimation;
+        public string _currentAnimation = "Idle";
+        public int currentFrame = 0;
 
         public Skeleton() { }
 
@@ -27,24 +28,51 @@ namespace _3dAnimation
         public void ComputeBindPose()
         {
             foreach (var joint in _joints)
-            {
-                if (!joint.HasParent)
-                    joint.UpdateWorld(Matrix.Identity);
-            }
+                joint.ResetToBindPose();
 
-            foreach (var joint in _joints)
-                joint.ComputeBindPose();
+            foreach (var root in _joints.Where(j => !j.HasParent))
+            {
+                root.UpdateWorld(Matrix.Identity);
+                ComputeBindPoseRecursive(root);
+            }
+        }
+
+        private void ComputeBindPoseRecursive(Joint joint)
+        {
+            joint.ComputeBindPose();
+
+            foreach (var child in joint.Children)
+                ComputeBindPoseRecursive(child);
         }
 
         public void Update()
         {
             if (string.IsNullOrEmpty(_currentAnimation))
             {
-                for (int i = 0; i <SkinMatrices.Length; i++)
+                for (int i = 0; i < SkinMatrices.Length; i++)
                     SkinMatrices[i] = Matrix.Identity;
 
                 return;
             }
+
+            var clip = AnimationClips.First(c => c.Name == _currentAnimation);
+
+            if (currentFrame >= clip.JoinByFrameTransform.Length)
+                currentFrame = 0;
+
+            foreach (var joint in _joints)
+                joint.ResetToBindPose();
+
+            var frame = clip.JoinByFrameTransform[currentFrame];
+
+            for (int i = 0; i < _joints.Length; i++)
+            {
+                if (frame != null && frame.TryGetValue(i, out var anim))
+                {
+                    _joints[i].ApplyTransformAnimation(anim);
+                }
+            }
+            currentFrame++;
 
             foreach (var joint in _joints)
             {
@@ -70,7 +98,7 @@ namespace _3dAnimation
         {
             foreach (Joint joint in root.Children)
             {
-                result += $"{prefix}{joint.Name} {joint.LocalMatrix.Translation}\n";
+                result += $"{prefix}{joint.Name} {joint.WorldMatrix.Translation}\n";
                 SetString(joint, prefix + "-", ref result);
             }
         }
@@ -83,7 +111,7 @@ namespace _3dAnimation
                 return "no joints";
 
             var root = roots[0];
-            string result = $"{root.Name} {root.LocalMatrix.Translation}\n";
+            string result = $"{root.Name} {root.WorldMatrix.Translation}\n";
             SetString(root, "-", ref result);
             return result;
         }

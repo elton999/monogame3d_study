@@ -75,13 +75,13 @@ public class Mesh
                     var listJoints = _gltf.Skins[0].Joints;
                     for (int n = bufferView.ByteOffset; n < bufferView.ByteOffset + bufferView.ByteLength; n++)
                     {
-                        float x = uriBytes[n];
+                        int x = uriBytes[n];
                         n++;
-                        float y = uriBytes[n];
+                        int y = uriBytes[n];
                         n++;
-                        float z = uriBytes[n];
+                        int z = uriBytes[n];
                         n++;
-                        float w = uriBytes[n];
+                        int w = uriBytes[n];
                         joints.Add(new Vector4(x, y, z, w));
                     }
                 }
@@ -99,7 +99,8 @@ public class Mesh
                         float z = BitConverter.ToSingle(uriBytes, n);
                         n += 4;
                         float w = BitConverter.ToSingle(uriBytes, n);
-                        weights.Add(new Vector4(x, y, z, w));
+                        var weight = new Vector4(x, y, z, w);
+                        weights.Add(weight);
                     }
                 }
 
@@ -217,128 +218,101 @@ public class Mesh
         _skeleton = new Skeleton(joints);
 
         var uriBytesList = GetBytesList();
-        for (int animationIndex = 0; animationIndex < _gltf.Animations.Length; animationIndex ++)
+        for (int animationIndex = 0; animationIndex < _gltf.Animations.Length; animationIndex++)
         {
             var animation = _gltf.Animations[animationIndex];
-            var animationClip = new AnimationClip(animation.Name);
-            _skeleton.AddAnimationClip(animationClip);
+            var clip = new AnimationClip(animation.Name);
+            _skeleton.AddAnimationClip(clip);
 
-            Console.WriteLine(animationClip.Name);
-
-            for (int channelIndex = 0; channelIndex < animation.Channels.Length; channelIndex++)
+            foreach (var channel in animation.Channels)
             {
-                var channel = animation.Channels[channelIndex];
                 var sampler = animation.Samplers[channel.Sampler];
 
-                int input = sampler.Input;
-                int output = sampler.Output;
+                int inputAccessorIndex = sampler.Input;
+                int outputAccessorIndex = sampler.Output;
 
-                for (int accessorIndex = 0; accessorIndex < _gltf.Accessors.Length; accessorIndex++)
+                var inputAccessor = _gltf.Accessors[inputAccessorIndex];
+                var outputAccessor = _gltf.Accessors[outputAccessorIndex];
+
+                var inputView = _gltf.BufferViews[inputAccessor.BufferView.Value];
+                var outputView = _gltf.BufferViews[outputAccessor.BufferView.Value];
+
+                byte[] inputBuffer = uriBytesList[inputView.Buffer];
+                byte[] outputBuffer = uriBytesList[outputView.Buffer];
+
+                int jointIndex = nodeToJoint[(int)channel.Target.Node];
+
+                int frameCount = inputAccessor.Count;
+                for (int f = 0; f < frameCount; f++)
                 {
-                    var accessor = _gltf.Accessors[accessorIndex];
-                    int bufferIndex = (int)accessor.BufferView;
+                    float time = BitConverter.ToSingle(
+                        inputBuffer,
+                        inputView.ByteOffset + inputAccessor.ByteOffset + f * 4
+                    );
 
-                    if (channel.Target.Path == AnimationChannelTarget.PathEnum.rotation)
+                    clip.AddFrameTimer(f, time);
+                }
+
+                for (int f = 0; f < frameCount; f++)
+                {
+                    int baseOffset =
+                        outputView.ByteOffset +
+                        outputAccessor.ByteOffset +
+                        f * GetStride(outputAccessor.Type);
+
+                    switch (channel.Target.Path)
                     {
-                        if (bufferIndex == output && accessor.Type == Accessor.TypeEnum.VEC4)
-                        {
-                            var bufferView = _gltf.BufferViews[bufferIndex];
-                            byte[] uriBytes = uriBytesList[bufferView.Buffer];
-
-                            int frameCount = 0;
-                            int byteOffset = bufferView.ByteOffset;
-                            int byteTotal = byteOffset + bufferView.ByteLength;
-
-                            for (int n = byteOffset; n < byteTotal; n += 4)
+                        case AnimationChannelTarget.PathEnum.translation:
                             {
-                                float x = BitConverter.ToSingle(uriBytes, n);
-                                n += 4;
-                                float y = BitConverter.ToSingle(uriBytes, n);
-                                n += 4;
-                                float z = BitConverter.ToSingle(uriBytes, n);
-                                n += 4;
-                                float w = BitConverter.ToSingle(uriBytes, n);
-
-                                float[] result = new float[4] { x, y, z, w };
-                                frameCount++;
-                            }
-                        } // floats output
-                    }
-
-                    if (channel.Target.Path == AnimationChannelTarget.PathEnum.translation)
-                    {
-                        if (bufferIndex == output && accessor.Type == Accessor.TypeEnum.VEC3)
-                        {
-                            var bufferView = _gltf.BufferViews[bufferIndex];
-                            byte[] uriBytes = uriBytesList[bufferView.Buffer];
-
-                            int frameCount = 0;
-                            int byteOffset = bufferView.ByteOffset;
-                            int byteTotal = byteOffset + bufferView.ByteLength;
-
-                            for (int n = byteOffset; n < byteTotal; n += 4)
-                            {
-                                float x = BitConverter.ToSingle(uriBytes, n);
-                                n += 4;
-                                float y = BitConverter.ToSingle(uriBytes, n);
-                                n += 4;
-                                float z = BitConverter.ToSingle(uriBytes, n);
-
-                                float[] result = new float[3] { x, y, z };
-                                frameCount++;
-                                animationClip.AddTranslation(frameCount, (int)channel.Target.Node, new VectorFrame() { mValue = result });
-                            }
-                        } // floats output
-                    }
-
-                    if (channel.Target.Path == AnimationChannelTarget.PathEnum.scale)
-                    {
-                        if (bufferIndex == output && accessor.Type == Accessor.TypeEnum.VEC3)
-                        {
-                            var bufferView = _gltf.BufferViews[bufferIndex];
-                            byte[] uriBytes = uriBytesList[bufferView.Buffer];
-
-                            int frameCount = 0;
-                            int byteOffset = bufferView.ByteOffset;
-                            int byteTotal = byteOffset + bufferView.ByteLength;
-
-                            for (int n = byteOffset; n < byteTotal; n += 4)
-                            {
-                                float x = BitConverter.ToSingle(uriBytes, n);
-                                n += 4;
-                                float y = BitConverter.ToSingle(uriBytes, n);
-                                n += 4;
-                                float z = BitConverter.ToSingle(uriBytes, n);
-
-                                float[] result = new float[3] { x, y, z };
-                                frameCount++;
-                                animationClip.AddScalar(frameCount, (int)channel.Target.Node, new ScalarFrame() { mValue = result });
-                            }
-                        } // floats output
-                    }
-
-                    if (bufferIndex == input && accessor.Type == Accessor.TypeEnum.SCALAR)
-                    {
-                        var bufferView = _gltf.BufferViews[bufferIndex];
-                        byte[] uriBytes = uriBytesList[bufferView.Buffer];
-
-                        int frameCount = 0;
-                        int byteOffset = bufferView.ByteOffset;
-                        int byteTotal = byteOffset + bufferView.ByteLength;
-
-                        for (int n = byteOffset; n < byteTotal; n += 4)
-                        {
-                            float x = BitConverter.ToSingle(uriBytes, n);
-
-                            frameCount++;
-                            animationClip.AddFrameTimer(frameCount, x);
+                                var v = new VectorFrame
+                                {
+                                    mValue = new[]
+                                    {
+                            BitConverter.ToSingle(outputBuffer, baseOffset + 0),
+                            BitConverter.ToSingle(outputBuffer, baseOffset + 4),
+                            BitConverter.ToSingle(outputBuffer, baseOffset + 8)
                         }
-                    } // time input
+                                };
+                                clip.AddTranslation(f, jointIndex, v);
+                                break;
+                            }
+
+                        case AnimationChannelTarget.PathEnum.rotation:
+                            {
+                                var q = new QuaternionFrame
+                                {
+                                    mValue = new[]
+                                    {
+                            BitConverter.ToSingle(outputBuffer, baseOffset + 0),
+                            BitConverter.ToSingle(outputBuffer, baseOffset + 4),
+                            BitConverter.ToSingle(outputBuffer, baseOffset + 8),
+                            BitConverter.ToSingle(outputBuffer, baseOffset + 12)
+                        }
+                                };
+                                clip.AddRotation(f, jointIndex, q);
+                                break;
+                            }
+
+                        case AnimationChannelTarget.PathEnum.scale:
+                            {
+                                var s = new ScalarFrame
+                                {
+                                    mValue = new[]
+                                    {
+                            BitConverter.ToSingle(outputBuffer, baseOffset + 0),
+                            BitConverter.ToSingle(outputBuffer, baseOffset + 4),
+                            BitConverter.ToSingle(outputBuffer, baseOffset + 8)
+                        }
+                                };
+                                clip.AddScalar(f, jointIndex, s);
+                                break;
+                            }
+                    }
                 }
             }
         }
 
-        for(int jointIndex = 0; jointIndex < skin.Joints.Length; jointIndex++)
+        for (int jointIndex = 0; jointIndex < skin.Joints.Length; jointIndex++)
         {
             int nodeIndex = skin.Joints[jointIndex];
             var node = _gltf.Nodes[nodeIndex];
@@ -429,23 +403,14 @@ public class Mesh
         return vectorListResult;
     }
 
-    private List<Vector4> GetVector4List(BufferView bufferView, byte[] uriBytes)
+    private static int GetStride(Accessor.TypeEnum type)
     {
-        var vectorListResult = new List<Vector4>();
-        var listJoints = _gltf.Skins[0].Joints;
-        for (int n = bufferView.ByteOffset; n < bufferView.ByteOffset + bufferView.ByteLength; n++)
+        return type switch
         {
-            float x = uriBytes[n];
-            n++;
-            float y = uriBytes[n];
-            n++;
-            float z = uriBytes[n];
-            n++;
-            float w = uriBytes[n];
-            var tempVector = new Vector4(x, y, z, w);
-            vectorListResult.Add(tempVector);
-        }
-
-        return vectorListResult;
+            Accessor.TypeEnum.SCALAR => 4,
+            Accessor.TypeEnum.VEC3 => 12,
+            Accessor.TypeEnum.VEC4 => 16,
+            _ => throw new NotSupportedException()
+        };
     }
 }

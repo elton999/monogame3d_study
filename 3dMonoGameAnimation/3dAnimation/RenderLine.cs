@@ -12,8 +12,9 @@ public class RenderLine
         _lineEffect.VertexColorEnabled = true;
     }
 
-    public void DrawLine( GraphicsDevice graphicsDevice, Vector3 start, Vector3 end, Matrix view, Matrix projection, Color color)
+    public void DrawLine(GraphicsDevice graphicsDevice, Vector3 start, Vector3 end, Matrix view, Matrix projection, Color color)
     {
+        graphicsDevice.Clear(ClearOptions.DepthBuffer, Color.Transparent, 1.0f, 0);
         var vertices = new VertexPositionColor[]
         {
         new VertexPositionColor(start, color),
@@ -23,6 +24,7 @@ public class RenderLine
         _lineEffect.World = Matrix.Identity;
         _lineEffect.View = view;
         _lineEffect.Projection = projection;
+        graphicsDevice.DepthStencilState = DepthStencilState.DepthRead;
 
         foreach (var pass in _lineEffect.CurrentTechnique.Passes)
         {

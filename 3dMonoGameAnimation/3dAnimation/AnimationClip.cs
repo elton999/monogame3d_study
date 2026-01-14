@@ -1,71 +1,75 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace _3dAnimation;
 
 public class AnimationClip
 {
-    private string _name;
-
+    private readonly string _name;
     public string Name => _name;
-    public float[] FramesTimer = new float[] { };
-    public Transform[][] JoinByFrameTransform = new Transform[][] { };
-    
+
+    public float[] FramesTimer = Array.Empty<float>();
+
+    public Dictionary<int, Transform>[] JoinByFrameTransform
+        = Array.Empty<Dictionary<int, Transform>>();
+
     public AnimationClip(string name)
     {
         _name = name;
     }
 
-    public void AddScalar(int frame, int jointId, ScalarFrame scalar)
-    {
-        ResizeFrameArray(frame, jointId);
-
-        JoinByFrameTransform[frame - 1][jointId].Scalar = scalar;
-    }
-
     public void AddTranslation(int frame, int jointId, VectorFrame translation)
     {
-        ResizeFrameArray(frame, jointId);
-
-        JoinByFrameTransform[frame - 1][jointId].Translation = translation;
+        var t = GetOrCreateTransform(frame, jointId);
+        t.Translation = translation;
+        t.HasTranslation = true;
     }
 
     public void AddRotation(int frame, int jointId, QuaternionFrame rotation)
     {
-        ResizeFrameArray(frame, jointId);
+        var t = GetOrCreateTransform(frame, jointId);
+        t.Rotation = rotation;
+        t.HasRotation = true;
+    }
 
-        JoinByFrameTransform[frame - 1][jointId].Rotation = rotation;
+    public void AddScalar(int frame, int jointId, ScalarFrame scalar)
+    {
+        var t = GetOrCreateTransform(frame, jointId);
+        t.Scalar = scalar;
+        t.HasScalar = true;
     }
 
     public void AddFrameTimer(int frame, float value)
     {
-        if (FramesTimer.Length < frame)
-        {
-            Array.Resize(ref FramesTimer, frame);
-        }
-
-        FramesTimer[frame - 1] = value;
+        EnsureFrameIndex(ref FramesTimer, frame);
+        FramesTimer[frame] = value;
     }
 
-    private void ResizeFrameArray(int frame, int jointId)
+    private Transform GetOrCreateTransform(int frame, int jointId)
     {
-        if (JoinByFrameTransform.Length < frame)
+        EnsureFrameIndex(ref JoinByFrameTransform, frame);
+
+        var frameDict = JoinByFrameTransform[frame];
+        if (frameDict == null)
         {
-            Array.Resize(ref JoinByFrameTransform, frame);
+            frameDict = new Dictionary<int, Transform>();
+            JoinByFrameTransform[frame] = frameDict;
         }
 
-        if (JoinByFrameTransform[frame - 1] == null)
+        if (!frameDict.TryGetValue(jointId, out var transform))
         {
-            JoinByFrameTransform[frame - 1] = new Transform[] { };
+            transform = new Transform();
+            frameDict[jointId] = transform;
         }
 
-        if (JoinByFrameTransform[frame - 1].Length < jointId + 1)
-        {
-            Array.Resize(ref JoinByFrameTransform[frame - 1], jointId + 1);
-        }
+        return transform;
+    }
 
-        if (JoinByFrameTransform[frame - 1][jointId] == null)
+    private static void EnsureFrameIndex<T>(ref T[] array, int frame)
+    {
+        if (array.Length <= frame)
         {
-            JoinByFrameTransform[frame - 1][jointId] = new Transform();
+            Array.Resize(ref array, frame + 1);
         }
     }
 }
