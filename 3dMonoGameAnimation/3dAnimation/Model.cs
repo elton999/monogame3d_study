@@ -19,7 +19,7 @@ public class Model
     private float _lightIntensity = 1.0f;
 
     //TODO: remove it soon as possible
-    Matrix _world = Matrix.CreateTranslation(0, 0, 0) * Matrix.CreateScale(0.1f);
+    Matrix _world = Matrix.CreateTranslation(0, 0, 0) * Matrix.CreateScale(0.01f);
     Matrix _view = Matrix.CreateLookAt(new Vector3(0, 4, 10), new Vector3(0, 3, 0), new Vector3(0, 1, 0));
     Matrix _projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(45), 800f / 480f, 0.01f, 100f);
 
@@ -66,16 +66,21 @@ public class Model
             _graphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, _mesh.Vertices.Length/3);
         }
 
-        var worldScale = Matrix.CreateScale(0.01f);
+        var worldScale = Matrix.CreateScale(1f);
         worldScale *= _world;
 
+        int count = 0;
         foreach (var joint in _mesh.Skeleton.Joints)
         {
+            var p = Vector3.Transform(Vector3.Zero, joint.WorldMatrix);
+            Console.WriteLine($"{joint.Name} {count}: {p}");
+            count++;
+
             if (!joint.HasParent)
                 continue;
 
-            Vector3 a = Vector3.Transform(joint.WorldMatrix.Translation, worldScale);
-            Vector3 b = Vector3.Transform( joint.Parent.WorldMatrix.Translation, worldScale);
+            Vector3 a = _mesh.Skeleton.GetJointPosition(joint, worldScale);
+            Vector3 b = _mesh.Skeleton.GetJointPosition(joint.Parent, worldScale);
 
             _line.DrawLine(_graphicsDevice, a, b, _view, _projection, Color.Green);
         }

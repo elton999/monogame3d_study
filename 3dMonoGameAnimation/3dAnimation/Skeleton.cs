@@ -13,9 +13,10 @@ namespace _3dAnimation
         public Joint[] Joints => _joints;
         public Matrix[] SkinMatrices;
         public AnimationClip[] AnimationClips => _animationClips;
+        public Matrix[] InverseBindMatrix;
 
-        public string _currentAnimation = "Idle";
-        public int currentFrame = 0;
+        public string CurrentAnimation = "Walking";
+        public int CurrentFrame = 0;
 
         public Skeleton() { }
 
@@ -27,27 +28,17 @@ namespace _3dAnimation
 
         public void ComputeBindPose()
         {
-            foreach (var joint in _joints)
-                joint.ResetToBindPose();
-
-            foreach (var root in _joints.Where(j => !j.HasParent))
+            for (int jointIndex = 0;  jointIndex < _joints.Length; jointIndex++)
             {
-                root.UpdateWorld(Matrix.Identity);
-                ComputeBindPoseRecursive(root);
+               var joint = _joints[jointIndex];
+               joint.BindPose = Matrix.Invert(InverseBindMatrix[jointIndex]);
+               joint.InverseBindPose = InverseBindMatrix[jointIndex];
             }
-        }
-
-        private void ComputeBindPoseRecursive(Joint joint)
-        {
-            joint.ComputeBindPose();
-
-            foreach (var child in joint.Children)
-                ComputeBindPoseRecursive(child);
         }
 
         public void Update()
         {
-            if (string.IsNullOrEmpty(_currentAnimation))
+            if (string.IsNullOrEmpty(CurrentAnimation))
             {
                 for (int i = 0; i < SkinMatrices.Length; i++)
                     SkinMatrices[i] = Matrix.Identity;
@@ -55,34 +46,39 @@ namespace _3dAnimation
                 return;
             }
 
-            var clip = AnimationClips.First(c => c.Name == _currentAnimation);
+            var clip = _animationClips.FirstOrDefault(c => c.Name == CurrentAnimation);
+            if (clip == null || clip.JoinByFrameTransform == null)
+                return;
 
-            if (currentFrame >= clip.JoinByFrameTransform.Length)
-                currentFrame = 0;
+            if (CurrentFrame >= clip.JoinByFrameTransform.Length)
+                CurrentFrame = 0;
 
+            // 1. Sempre volte ao bind pose antes de aplicar animação
             foreach (var joint in _joints)
                 joint.ResetToBindPose();
 
-            var frame = clip.JoinByFrameTransform[currentFrame];
+            // 2. Aplica animação LOCAL (sem world ainda)
+            var frame = clip.JoinByFrameTransform[CurrentFrame];
 
-            for (int i = 0; i < _joints.Length; i++)
+            if (frame != null)
             {
-                if (frame != null && frame.TryGetValue(i, out var anim))
+                for (int i = 0; i < _joints.Length; i++)
                 {
-                    _joints[i].ApplyTransformAnimation(anim);
+                    if (frame.TryGetValue(i, out var animTransform))
+                        _joints[i].ApplyTransformAnimation(animTransform);
                 }
             }
-            currentFrame++;
 
-            foreach (var joint in _joints)
-            {
-                if (!joint.HasParent)
-                    joint.UpdateWorld(Matrix.Identity);
-            }
+            CurrentFrame++;
 
+            // 3. Atualiza world matrices (hierarquia correta)
+            foreach (var root in _joints.Where(j => !j.HasParent))
+                root.UpdateWorld(Matrix.Identity);
+
+            // 4. Calcula skin matrices finais
             for (int i = 0; i < _joints.Length; i++)
             {
-                SkinMatrices[i] = _joints[i].WorldMatrix * _joints[i].InversePose;
+                SkinMatrices[i] = _joints[i].InverseBindPose * _joints[i].WorldMatrix;
             }
         }
 
@@ -101,6 +97,12 @@ namespace _3dAnimation
                 result += $"{prefix}{joint.Name} {joint.WorldMatrix.Translation}\n";
                 SetString(joint, prefix + "-", ref result);
             }
+        }
+
+        public Vector3 GetJointPosition(Joint joint, Matrix worldScale)
+        {
+            Vector3 pos = Vector3.Transform(Vector3.Zero, joint.WorldMatrix);
+            return Vector3.Transform(pos, worldScale);
         }
 
         public override string ToString()

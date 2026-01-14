@@ -14,7 +14,7 @@ public class Joint
     public string Name => _name;
     public Transform JointTransform => _transform;
     public Transform BindTransform => _bindTransform;
-    public Matrix InversePose;
+    public Matrix InverseBindPose;
 
     public List<Joint> Children = new();
 
@@ -32,6 +32,7 @@ public class Joint
     public void UpdateWorld(Matrix parentWorld)
     {
         LocalMatrix = JointTransform.GetLocalMatrix();
+        // Apply local transform THEN parent transform
         WorldMatrix = LocalMatrix * parentWorld;
 
         foreach (var child in Children)
@@ -41,7 +42,7 @@ public class Joint
     public void ComputeBindPose()
     {
         BindPose = WorldMatrix;
-        InversePose = Matrix.Invert(BindPose);
+        InverseBindPose = Matrix.Invert(BindPose);
     }
 
     public void SetTransform(Transform transform)

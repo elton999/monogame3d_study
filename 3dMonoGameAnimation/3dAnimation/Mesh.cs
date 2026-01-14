@@ -216,6 +216,7 @@ public class Mesh
         }
 
         _skeleton = new Skeleton(joints);
+        _skeleton.InverseBindMatrix = _inverseBindMatrix;
 
         var uriBytesList = GetBytesList();
         for (int animationIndex = 0; animationIndex < _gltf.Animations.Length; animationIndex++)
