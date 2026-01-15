@@ -10,6 +10,7 @@ namespace _3dAnimation
         private SpriteBatch _spriteBatch;
         private Model _model;
         private Mesh _mesh;
+        private Animator _animator;
 
         public Game1()
         {
@@ -31,13 +32,17 @@ namespace _3dAnimation
             _mesh = new Mesh(@"Content/Woman.gltf");
             _model = new Model(_graphics.GraphicsDevice, _mesh, effect);
             _model.SetTexture(texture);
+            _model.SetDebugState(Model.Debug.RenderJointAndMesh);
             _mesh.Skeleton.ComputeBindPose();
-            Console.WriteLine(_mesh.Skeleton.ToString());
+
+            _animator = new Animator(_mesh.Skeleton);
+            _animator.PlayAnimation("Walking");
         }
 
         protected override void Update(GameTime gameTime)
         {
-            _mesh.Skeleton.Update();
+            float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
+            _animator.Update(deltaTime);
             base.Update(gameTime);
         }
 

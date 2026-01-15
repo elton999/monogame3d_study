@@ -7,7 +7,8 @@ public class Model
     {
         None = 0,
         RenderJoint = 1,
-        RenderMeshLines = 2,
+        RenderJointAndMesh = 2,
+        RenderMeshLines = 3,
     }
 
     private VertexBuffer _vertexBuffer;
@@ -68,7 +69,7 @@ public class Model
         foreach (EffectPass pass in _basicEffect.CurrentTechnique.Passes)
         {
             pass.Apply();
-            if (_debugState is Debug.None)
+            if (_debugState is Debug.None or Debug.RenderJointAndMesh)
             {
                 _graphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, _mesh.Vertices.Length / 3);
             }
@@ -79,7 +80,7 @@ public class Model
             }
         }
 
-        if (_debugState is Debug.RenderJoint)
+        if (_debugState is Debug.RenderJoint or Debug.RenderJointAndMesh)
         {
             RenderJoints();
         }
