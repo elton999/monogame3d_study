@@ -1,15 +1,21 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using System;
-
 namespace _3dAnimation;
 public class Model
 {
+    public enum Debug
+    {
+        None = 0,
+        RenderJoint = 1,
+        RenderMeshLines = 2,
+    }
+
     private VertexBuffer _vertexBuffer;
     private GraphicsDevice _graphicsDevice;
     private Mesh _mesh;
     private IndexBuffer _indexBuffer;
     private Texture _texture;
+    private Debug _debugState;
 
     private RenderLine _line;
 
@@ -37,11 +43,10 @@ public class Model
 
     public void SetLightPosition(Vector3 lightPosition) => _lightPosition = lightPosition;
     public void SetTexture(Texture texture) => _texture = texture;
+    public void SetDebugState(Debug debug) => _debugState = debug;
 
     public void Draw()
     {
-        _world *= Matrix.CreateRotationY(MathHelper.ToRadians(0.5f));
-
         _basicEffect.Parameters["World"].SetValue(_world);
         _basicEffect.Parameters["View"].SetValue(_view);
         _basicEffect.Parameters["Projection"].SetValue(_projection);
@@ -63,9 +68,25 @@ public class Model
         foreach (EffectPass pass in _basicEffect.CurrentTechnique.Passes)
         {
             pass.Apply();
-            _graphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, _mesh.Vertices.Length/3);
+            if (_debugState is Debug.None)
+            {
+                _graphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, _mesh.Vertices.Length / 3);
+            }
+
+            if (_debugState is Debug.RenderMeshLines)
+            {
+                _graphicsDevice.DrawPrimitives(PrimitiveType.LineList, 0, _mesh.Vertices.Length);
+            }
         }
 
+        if (_debugState is Debug.RenderJoint)
+        {
+            RenderJoints();
+        }
+    }
+
+    private void RenderJoints()
+    {
         var worldScale = Matrix.CreateScale(1f);
         worldScale *= _world;
 
@@ -73,7 +94,6 @@ public class Model
         foreach (var joint in _mesh.Skeleton.Joints)
         {
             var p = Vector3.Transform(Vector3.Zero, joint.WorldMatrix);
-            Console.WriteLine($"{joint.Name} {count}: {p}");
             count++;
 
             if (!joint.HasParent)
@@ -85,5 +105,4 @@ public class Model
             _line.DrawLine(_graphicsDevice, a, b, _view, _projection, Color.Green);
         }
     }
-    
 }
