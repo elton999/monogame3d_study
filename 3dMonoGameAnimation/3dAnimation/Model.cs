@@ -87,9 +87,6 @@ public class Model
 
     private void RenderJoints()
     {
-        var worldScale = Matrix.CreateScale(1f);
-        worldScale *= _world;
-
         int count = 0;
         foreach (var joint in _mesh.Skeleton.Joints)
         {
@@ -99,8 +96,8 @@ public class Model
             if (!joint.HasParent)
                 continue;
 
-            Vector3 a = _mesh.Skeleton.GetJointPosition(joint, worldScale);
-            Vector3 b = _mesh.Skeleton.GetJointPosition(joint.Parent, worldScale);
+            Vector3 a = _mesh.Skeleton.GetJointPosition(joint, _world);
+            Vector3 b = _mesh.Skeleton.GetJointPosition(joint.Parent, _world);
 
             _line.DrawLine(_graphicsDevice, a, b, _view, _projection, Color.Green);
         }

@@ -1,5 +1,4 @@
-﻿using glTFLoader.Schema;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using System;
 using System.Linq;
 
@@ -15,8 +14,8 @@ namespace _3dAnimation
         public AnimationClip[] AnimationClips => _animationClips;
         public Matrix[] InverseBindMatrix;
 
-        public string CurrentAnimation = "Walking";
-        public int CurrentFrame = 0;
+        public string _animationName = "";
+        public int _currentFrame = 0;
 
         public Skeleton() { }
 
@@ -36,9 +35,14 @@ namespace _3dAnimation
             }
         }
 
+        public void PlayAnimation(string animationName)
+        {
+            _animationName = animationName;
+        }
+
         public void Update()
         {
-            if (string.IsNullOrEmpty(CurrentAnimation))
+            if (string.IsNullOrEmpty(_animationName))
             {
                 for (int i = 0; i < SkinMatrices.Length; i++)
                     SkinMatrices[i] = Matrix.Identity;
@@ -46,19 +50,19 @@ namespace _3dAnimation
                 return;
             }
 
-            var clip = _animationClips.FirstOrDefault(c => c.Name == CurrentAnimation);
+            var clip = _animationClips.FirstOrDefault(c => c.Name == _animationName);
             if (clip == null || clip.JoinByFrameTransform == null)
                 return;
 
-            if (CurrentFrame >= clip.JoinByFrameTransform.Length)
-                CurrentFrame = 0;
+            if (_currentFrame >= clip.JoinByFrameTransform.Length)
+                _currentFrame = 0;
 
             // 1. Sempre volte ao bind pose antes de aplicar animação
             foreach (var joint in _joints)
                 joint.ResetToBindPose();
 
             // 2. Aplica animação LOCAL (sem world ainda)
-            var frame = clip.JoinByFrameTransform[CurrentFrame];
+            var frame = clip.JoinByFrameTransform[_currentFrame];
 
             if (frame != null)
             {
@@ -69,7 +73,7 @@ namespace _3dAnimation
                 }
             }
 
-            CurrentFrame++;
+            _currentFrame++;
 
             // 3. Atualiza world matrices (hierarquia correta)
             foreach (var root in _joints.Where(j => !j.HasParent))
