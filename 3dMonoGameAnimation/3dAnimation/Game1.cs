@@ -33,6 +33,11 @@ namespace _3dAnimation
             _model = new Model(_graphics.GraphicsDevice, _mesh, effect);
             _model.SetTexture(texture);
             _model.SetDebugState(Model.Debug.RenderJointAndMesh);
+
+            _model.World = Matrix.CreateTranslation(0, 0, 0) * Matrix.CreateScale(0.01f);
+            _model.View = Matrix.CreateLookAt(new Vector3(0, 4, 10), new Vector3(0, 3, 0), new Vector3(0, 1, 0));
+            _model.Projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(45), 800f / 480f, 0.01f, 100f);
+
             _mesh.Skeleton.ComputeBindPose();
 
             _animator = new Animator(_mesh.Skeleton);

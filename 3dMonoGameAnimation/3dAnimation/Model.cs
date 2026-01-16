@@ -21,14 +21,14 @@ public class Model
     private RenderLine _line;
 
     private Effect _basicEffect;
-    private Vector3 _lightPosition;
-    private Color _lightColor = Color.White;
-    private float _lightIntensity = 1.0f;
 
-    //TODO: remove it soon as possible
-    Matrix _world = Matrix.CreateTranslation(0, 0, 0) * Matrix.CreateScale(0.01f);
-    Matrix _view = Matrix.CreateLookAt(new Vector3(0, 4, 10), new Vector3(0, 3, 0), new Vector3(0, 1, 0));
-    Matrix _projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(45), 800f / 480f, 0.01f, 100f);
+    private Matrix _world = Matrix.CreateTranslation(0, 0, 0) * Matrix.CreateScale(0.01f);
+    private Matrix _view = Matrix.CreateLookAt(new Vector3(0, 4, 10), new Vector3(0, 3, 0), new Vector3(0, 1, 0));
+    private Matrix _projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(45), 800f / 480f, 0.01f, 100f);
+
+    public Matrix World { get => _world; set => _world = value; }
+    public Matrix View { get => _view; set => _view = value; }
+    public Matrix Projection { get => _projection; set => _projection = value; }
 
     public Model(GraphicsDevice graphicsDevice, Mesh mesh, Effect effect)
     {
@@ -42,9 +42,9 @@ public class Model
         _line = new RenderLine(graphicsDevice);
     }
 
-    public void SetLightPosition(Vector3 lightPosition) => _lightPosition = lightPosition;
     public void SetTexture(Texture texture) => _texture = texture;
     public void SetDebugState(Debug debug) => _debugState = debug;
+    public void SetEffect(Effect effect) => _basicEffect = effect;
 
     public void Draw()
     {
