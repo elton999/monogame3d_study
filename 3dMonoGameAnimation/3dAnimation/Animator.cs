@@ -6,17 +6,25 @@ namespace _3dAnimation;
 
 public class Animator
 {
+    public enum LoopMode
+    {
+        REPEAT = 0,
+        PING_PONG = 1,
+        ONCE = 2,
+    }
+
     private string _animationName;
     private float _timer;
     private int _currentFrame;
     private Skeleton _skeleton;
+    private LoopMode _currentLoopMode;
 
     public Animator(Skeleton skeleton) => _skeleton = skeleton;
 
-    public void PlayAnimation(string animationName)
+    public void PlayAnimation(string animationName, LoopMode loopMode = LoopMode.REPEAT)
     {
-        _timer = 0f;
-        _currentFrame = 0;
+        _currentLoopMode = loopMode;
+        ResetAnimation();
         _animationName = animationName;
     }
 
@@ -37,14 +45,7 @@ public class Animator
         if (clip == null || clip.JoinByFrameTransform == null)
             return;
 
-        if (_timer > clip.FramesTimer[_currentFrame])
-            _currentFrame++;
-
-        if (_currentFrame >= clip.JoinByFrameTransform.Length)
-        { 
-            _currentFrame = 0;
-            _timer = 0f;
-        }
+        UpdateLoop(clip);
 
         // 1. Sempre volte ao bind pose antes de aplicar animação
         foreach (var joint in joints)
@@ -79,5 +80,28 @@ public class Animator
     {
         _timer = 0f;
         _currentFrame = 0;
+    }
+
+    private void UpdateLoop(AnimationClip clip)
+    {
+        if (_timer > clip.FramesTimer[_currentFrame])
+        {
+            bool isLastFrame = clip.FramesTimer.Length - 1 == _currentFrame;
+            
+            if(_currentLoopMode is LoopMode.REPEAT || _currentLoopMode is LoopMode.ONCE && !isLastFrame)
+                _currentFrame++;
+        }
+
+        if (_currentFrame < clip.JoinByFrameTransform.Length) return;
+
+        if (_currentLoopMode is LoopMode.REPEAT)
+        {
+            ResetAnimation();
+        }
+
+        if (_currentLoopMode is LoopMode.PING_PONG)
+        {
+            // TODO: Logic of ping pong animation
+        }
     }
 }
