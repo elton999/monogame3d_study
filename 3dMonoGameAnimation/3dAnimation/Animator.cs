@@ -1,6 +1,5 @@
-﻿using Microsoft.Xna.Framework;
-using System;
-using System.Linq;
+﻿using System.Linq;
+using Microsoft.Xna.Framework;
 
 namespace _3dAnimation;
 

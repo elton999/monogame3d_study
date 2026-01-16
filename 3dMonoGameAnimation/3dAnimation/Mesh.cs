@@ -1,11 +1,8 @@
 ﻿using glTFLoader;
 using glTFLoader.Schema;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.Metrics;
-using System.IO;
 
 namespace _3dAnimation;
 public class Mesh
@@ -198,9 +195,9 @@ public class Mesh
             joints[jointIndex] = new Joint(node.Name);
         }
 
-        for (int i = 0; i < jointCount; i++)
+        for (int jointIndex = 0; jointIndex < jointCount; jointIndex++)
         {
-            int nodeIndex = jointNodes[i];
+            int nodeIndex = jointNodes[jointIndex];
             var node = _gltf.Nodes[nodeIndex];
 
             if (node.Children == null)
@@ -211,7 +208,7 @@ public class Mesh
                 if (!nodeToJoint.TryGetValue(childNodeIndex, out int childJointIndex))
                     continue;
 
-                joints[childJointIndex].SetParent(joints[i]);
+                joints[childJointIndex].SetParent(joints[jointIndex]);
             }
         }
 
@@ -231,6 +228,7 @@ public class Mesh
 
                 int inputAccessorIndex = sampler.Input;
                 int outputAccessorIndex = sampler.Output;
+                var animationInterpolation = sampler.Interpolation;
 
                 var inputAccessor = _gltf.Accessors[inputAccessorIndex];
                 var outputAccessor = _gltf.Accessors[outputAccessorIndex];
@@ -244,22 +242,22 @@ public class Mesh
                 int jointIndex = nodeToJoint[(int)channel.Target.Node];
 
                 int frameCount = inputAccessor.Count;
-                for (int f = 0; f < frameCount; f++)
+                for (int frameIndex = 0; frameIndex < frameCount; frameIndex++)
                 {
                     float time = BitConverter.ToSingle(
                         inputBuffer,
-                        inputView.ByteOffset + inputAccessor.ByteOffset + f * 4
+                        inputView.ByteOffset + inputAccessor.ByteOffset + frameIndex * 4
                     );
 
-                    clip.AddFrameTimer(f, time);
+                    clip.AddFrameTimer(frameIndex, time);
                 }
 
-                for (int f = 0; f < frameCount; f++)
+                for (int frameIndex = 0; frameIndex < frameCount; frameIndex++)
                 {
                     int baseOffset =
                         outputView.ByteOffset +
                         outputAccessor.ByteOffset +
-                        f * GetStride(outputAccessor.Type);
+                        frameIndex * GetStride(outputAccessor.Type);
 
                     switch (channel.Target.Path)
                     {
@@ -269,12 +267,13 @@ public class Mesh
                                 {
                                     mValue = new[]
                                     {
-                            BitConverter.ToSingle(outputBuffer, baseOffset + 0),
-                            BitConverter.ToSingle(outputBuffer, baseOffset + 4),
-                            BitConverter.ToSingle(outputBuffer, baseOffset + 8)
-                        }
+                                        BitConverter.ToSingle(outputBuffer, baseOffset + 0),
+                                        BitConverter.ToSingle(outputBuffer, baseOffset + 4),
+                                        BitConverter.ToSingle(outputBuffer, baseOffset + 8)
+                                    },
+                                    Interpolation = (InterpolationType)animationInterpolation
                                 };
-                                clip.AddTranslation(f, jointIndex, v);
+                                clip.AddTranslation(frameIndex, jointIndex, v);
                                 break;
                             }
 
@@ -284,13 +283,14 @@ public class Mesh
                                 {
                                     mValue = new[]
                                     {
-                            BitConverter.ToSingle(outputBuffer, baseOffset + 0),
-                            BitConverter.ToSingle(outputBuffer, baseOffset + 4),
-                            BitConverter.ToSingle(outputBuffer, baseOffset + 8),
-                            BitConverter.ToSingle(outputBuffer, baseOffset + 12)
-                        }
+                                        BitConverter.ToSingle(outputBuffer, baseOffset + 0),
+                                        BitConverter.ToSingle(outputBuffer, baseOffset + 4),
+                                        BitConverter.ToSingle(outputBuffer, baseOffset + 8),
+                                        BitConverter.ToSingle(outputBuffer, baseOffset + 12)
+                                    },
+                                    Interpolation = (InterpolationType)animationInterpolation
                                 };
-                                clip.AddRotation(f, jointIndex, q);
+                                clip.AddRotation(frameIndex, jointIndex, q);
                                 break;
                             }
 
@@ -300,12 +300,13 @@ public class Mesh
                                 {
                                     mValue = new[]
                                     {
-                            BitConverter.ToSingle(outputBuffer, baseOffset + 0),
-                            BitConverter.ToSingle(outputBuffer, baseOffset + 4),
-                            BitConverter.ToSingle(outputBuffer, baseOffset + 8)
-                        }
+                                        BitConverter.ToSingle(outputBuffer, baseOffset + 0),
+                                        BitConverter.ToSingle(outputBuffer, baseOffset + 4),
+                                        BitConverter.ToSingle(outputBuffer, baseOffset + 8)
+                                    },
+                                    Interpolation = (InterpolationType)animationInterpolation
                                 };
-                                clip.AddScalar(f, jointIndex, s);
+                                clip.AddScalar(frameIndex, jointIndex, s);
                                 break;
                             }
                     }

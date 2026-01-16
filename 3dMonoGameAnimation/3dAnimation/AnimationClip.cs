@@ -10,8 +10,7 @@ public class AnimationClip
 
     public float[] FramesTimer = Array.Empty<float>();
 
-    public Dictionary<int, Transform>[] JoinByFrameTransform
-        = Array.Empty<Dictionary<int, Transform>>();
+    public Dictionary<int, Transform>[] JoinByFrameTransform = Array.Empty<Dictionary<int, Transform>>();
 
     public AnimationClip(string name)
     {
