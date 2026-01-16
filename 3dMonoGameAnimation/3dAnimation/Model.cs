@@ -5,10 +5,10 @@ public class Model
 {
     public enum Debug
     {
-        None = 0,
-        RenderJoint = 1,
-        RenderJointAndMesh = 2,
-        RenderMeshLines = 3,
+        NONE = 0,
+        RENDER_JOINTS = 1,
+        RENDER_JOINTS_AND_MESH = 2,
+        RENDER_MESH_LINES = 3,
     }
 
     private VertexBuffer _vertexBuffer;
@@ -38,6 +38,8 @@ public class Model
 
         _vertexBuffer = new VertexBuffer(graphicsDevice, typeof(ModelVertexType), _mesh.Vertices.Length, BufferUsage.WriteOnly);
         _vertexBuffer.SetData(_mesh.Vertices);
+
+        _mesh.Skeleton.ComputeBindPose();
 
         _line = new RenderLine(graphicsDevice);
     }
@@ -69,18 +71,18 @@ public class Model
         foreach (EffectPass pass in _basicEffect.CurrentTechnique.Passes)
         {
             pass.Apply();
-            if (_debugState is Debug.None or Debug.RenderJointAndMesh)
+            if (_debugState is Debug.NONE or Debug.RENDER_JOINTS_AND_MESH)
             {
                 _graphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, _mesh.Vertices.Length / 3);
             }
 
-            if (_debugState is Debug.RenderMeshLines)
+            if (_debugState is Debug.RENDER_MESH_LINES)
             {
                 _graphicsDevice.DrawPrimitives(PrimitiveType.LineList, 0, _mesh.Vertices.Length);
             }
         }
 
-        if (_debugState is Debug.RenderJoint or Debug.RenderJointAndMesh)
+        if (_debugState is Debug.RENDER_JOINTS or Debug.RENDER_JOINTS_AND_MESH)
         {
             RenderJoints();
         }
