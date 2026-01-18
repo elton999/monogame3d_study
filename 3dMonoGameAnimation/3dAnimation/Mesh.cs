@@ -252,60 +252,62 @@ public class Mesh
                     clip.AddFrameTimer(frameIndex, time);
                 }
 
+                int elementSize = GetStride(outputAccessor.Type, InterpolationType.LINEAR); // Tamanho de 1 VEC3 (12 bytes)
+                int totalFrameStride = GetStride(outputAccessor.Type, (InterpolationType)animationInterpolation);
+
                 for (int frameIndex = 0; frameIndex < frameCount; frameIndex++)
                 {
-                    int baseOffset =
-                        outputView.ByteOffset +
-                        outputAccessor.ByteOffset +
-                        frameIndex * GetStride(outputAccessor.Type);
+                    int frameOffset = outputView.ByteOffset + outputAccessor.ByteOffset + (frameIndex * totalFrameStride);
 
                     switch (channel.Target.Path)
                     {
                         case AnimationChannelTarget.PathEnum.translation:
                             {
-                                var v = new VectorFrame
+                                var v = new VectorFrame { Interpolation = (InterpolationType)animationInterpolation };
+                                if (v.Interpolation == InterpolationType.CUBICSPLINE)
                                 {
-                                    mValue = new[]
-                                    {
-                                        BitConverter.ToSingle(outputBuffer, baseOffset + 0),
-                                        BitConverter.ToSingle(outputBuffer, baseOffset + 4),
-                                        BitConverter.ToSingle(outputBuffer, baseOffset + 8)
-                                    },
-                                    Interpolation = (InterpolationType)animationInterpolation
-                                };
+                                    v.InTangent = ReadFloatArray(outputBuffer, frameOffset, 3);
+                                    v.mValue = ReadFloatArray(outputBuffer, frameOffset + elementSize, 3);
+                                    v.OutTangent = ReadFloatArray(outputBuffer, frameOffset + elementSize * 2, 3);
+                                }
+                                else
+                                {
+                                    v.mValue = ReadFloatArray(outputBuffer, frameOffset, 3);
+                                }
                                 clip.AddTranslation(frameIndex, jointIndex, v);
                                 break;
                             }
 
                         case AnimationChannelTarget.PathEnum.rotation:
                             {
-                                var q = new QuaternionFrame
+                                var q = new QuaternionFrame { Interpolation = (InterpolationType)animationInterpolation };
+                                if (q.Interpolation == InterpolationType.CUBICSPLINE)
                                 {
-                                    mValue = new[]
-                                    {
-                                        BitConverter.ToSingle(outputBuffer, baseOffset + 0),
-                                        BitConverter.ToSingle(outputBuffer, baseOffset + 4),
-                                        BitConverter.ToSingle(outputBuffer, baseOffset + 8),
-                                        BitConverter.ToSingle(outputBuffer, baseOffset + 12)
-                                    },
-                                    Interpolation = (InterpolationType)animationInterpolation
-                                };
+                                    q.InTangent = ReadFloatArray(outputBuffer, frameOffset, 4);
+                                    q.mValue = ReadFloatArray(outputBuffer, frameOffset + elementSize, 4);
+                                    q.OutTangent = ReadFloatArray(outputBuffer, frameOffset + elementSize * 2, 4);
+                                }
+                                else
+                                {
+                                    q.mValue = ReadFloatArray(outputBuffer, frameOffset, 4);
+                                }
                                 clip.AddRotation(frameIndex, jointIndex, q);
                                 break;
                             }
 
                         case AnimationChannelTarget.PathEnum.scale:
                             {
-                                var s = new ScalarFrame
+                                var s = new ScalarFrame { Interpolation = (InterpolationType)animationInterpolation };
+                                if (s.Interpolation == InterpolationType.CUBICSPLINE)
                                 {
-                                    mValue = new[]
-                                    {
-                                        BitConverter.ToSingle(outputBuffer, baseOffset + 0),
-                                        BitConverter.ToSingle(outputBuffer, baseOffset + 4),
-                                        BitConverter.ToSingle(outputBuffer, baseOffset + 8)
-                                    },
-                                    Interpolation = (InterpolationType)animationInterpolation
-                                };
+                                    s.InTangent = ReadFloatArray(outputBuffer, frameOffset, 3);
+                                    s.mValue = ReadFloatArray(outputBuffer, frameOffset + elementSize, 3);
+                                    s.OutTangent = ReadFloatArray(outputBuffer, frameOffset + elementSize * 2, 3);
+                                }
+                                else
+                                {
+                                    s.mValue = ReadFloatArray(outputBuffer, frameOffset, 3);
+                                }
                                 clip.AddScalar(frameIndex, jointIndex, s);
                                 break;
                             }
@@ -374,6 +376,16 @@ public class Mesh
         _meshVertices = vertices.ToArray();
     }
 
+    private float[] ReadFloatArray(byte[] buffer, int offset, int count)
+    {
+        float[] result = new float[count];
+        for (int i = 0; i < count; i++)
+        {
+            result[i] = BitConverter.ToSingle(buffer, offset + (i * 4));
+        }
+        return result;
+    }
+
     private byte[][] GetBytesList()
     {
         byte[][] uriBytesList = new byte[_gltf.Buffers.Length][];
@@ -405,14 +417,16 @@ public class Mesh
         return vectorListResult;
     }
 
-    private static int GetStride(Accessor.TypeEnum type)
+    private static int GetStride(Accessor.TypeEnum type, InterpolationType interpolation)
     {
-        return type switch
+        int baseStride = type switch
         {
             Accessor.TypeEnum.SCALAR => 4,
             Accessor.TypeEnum.VEC3 => 12,
             Accessor.TypeEnum.VEC4 => 16,
             _ => throw new NotSupportedException()
         };
+
+        return interpolation == InterpolationType.CUBICSPLINE ? baseStride * 3 : baseStride;
     }
 }

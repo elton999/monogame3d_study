@@ -1,4 +1,4 @@
-﻿using System.Numerics;
+﻿using Microsoft.Xna.Framework;
 
 namespace _3dAnimation;
 
@@ -14,6 +14,8 @@ public class Frame
 {
     public float[] mValue;
     public InterpolationType Interpolation;
+    public float[] InTangent;
+    public float[] OutTangent;
 }
 
 public class ScalarFrame : Frame

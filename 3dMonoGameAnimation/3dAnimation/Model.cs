@@ -22,8 +22,8 @@ public class Model
 
     private Effect _basicEffect;
 
-    private Matrix _world = Matrix.CreateTranslation(0, 0, 0) * Matrix.CreateScale(0.01f);
-    private Matrix _view = Matrix.CreateLookAt(new Vector3(0, 4, 10), new Vector3(0, 3, 0), new Vector3(0, 1, 0));
+    private Matrix _world = Matrix.CreateTranslation(0, 0, 0);
+    private Matrix _view = Matrix.CreateLookAt(new Vector3(0, 4, 10), new Vector3(0, 0, 0), new Vector3(0, 1, 0));
     private Matrix _projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(45), 800f / 480f, 0.01f, 100f);
 
     public Matrix World { get => _world; set => _world = value; }
@@ -38,6 +38,9 @@ public class Model
 
         _vertexBuffer = new VertexBuffer(graphicsDevice, typeof(ModelVertexType), _mesh.Vertices.Length, BufferUsage.WriteOnly);
         _vertexBuffer.SetData(_mesh.Vertices);
+
+        _indexBuffer = new IndexBuffer(graphicsDevice, IndexElementSize.SixteenBits, _mesh.Indices.Length, BufferUsage.WriteOnly);
+        _indexBuffer.SetData(_mesh.Indices);
 
         _mesh.Skeleton.ComputeBindPose();
 
@@ -73,12 +76,12 @@ public class Model
             pass.Apply();
             if (_debugState is Debug.NONE or Debug.RENDER_JOINTS_AND_MESH)
             {
-                _graphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, _mesh.Vertices.Length / 3);
+                _graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, _mesh.Indices.Length / 3);
             }
 
             if (_debugState is Debug.RENDER_MESH_LINES)
             {
-                _graphicsDevice.DrawPrimitives(PrimitiveType.LineList, 0, _mesh.Vertices.Length);
+                _graphicsDevice.DrawIndexedPrimitives(PrimitiveType.LineList, 0, 0, _mesh.Vertices.Length / 2);
             }
         }
 
