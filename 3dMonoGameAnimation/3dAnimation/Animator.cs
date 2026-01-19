@@ -30,28 +30,39 @@ public class Animator
 
     public void Update(float deltaTimer)
     {
-        if (string.IsNullOrEmpty(_animationName))
+        foreach (var joint in _skeleton.Joints)
+            joint.ResetToBindPose();
+
+        if (!string.IsNullOrEmpty(_animationName))
         {
             for (int i = 0; i < _skeleton.SkinMatrices.Length; i++)
                 _skeleton.SkinMatrices[i] = Matrix.Identity;
 
-            return;
+            var joints = _skeleton.Joints;
+            var animationClips = _skeleton.AnimationClips;
+            var clip = animationClips.FirstOrDefault(c => c.Name == _animationName);
+            if (clip == null || clip.JoinByFrameTransform == null)
+            {
+                UpdateLoop(clip);
+                ApplyAnimationPose(joints, clip);
+            }
         }
 
-        var animationClips = _skeleton.AnimationClips;
-        var joints = _skeleton.Joints;
+        _timer += deltaTimer;
 
-        var clip = animationClips.FirstOrDefault(c => c.Name == _animationName);
-        if (clip == null || clip.JoinByFrameTransform == null)
-            return;
+        foreach (var root in _skeleton.Joints.Where(j => !j.HasParent))
+            root.UpdateWorld(Matrix.Identity);
 
-        UpdateLoop(clip);
+        //Calcula skin matrices finais
+        for (int jointIndex = 0; jointIndex < _skeleton.Joints.Length; jointIndex++)
+        {
+            var joint = _skeleton.Joints[jointIndex];
+            _skeleton.SkinMatrices[jointIndex] = joint.InverseBindPose * joint.WorldMatrix;
+        }
+    }
 
-        // 1. Sempre volte ao bind pose antes de aplicar animação
-        foreach (var joint in joints)
-            joint.ResetToBindPose();
-
-        // 2. Aplica animação LOCAL (sem world ainda)
+    private void ApplyAnimationPose(Joint[] joints, AnimationClip clip)
+    {
         var currentFrame = clip.JoinByFrameTransform[_currentFrame];
 
         if (currentFrame != null)
@@ -67,9 +78,9 @@ public class Animator
                     var nextAnimTransform = animTransform;
                     var tempAnimTransform = animTransform.GetCopy();
 
-                    if (clip.JoinByFrameTransform.Length -1 > _currentFrame + 1)
+                    if (clip.JoinByFrameTransform.Length - 1 > _currentFrame + 1)
                     {
-                        var nextFrame = clip.JoinByFrameTransform[_currentFrame+1];
+                        var nextFrame = clip.JoinByFrameTransform[_currentFrame + 1];
                         if (nextFrame != null && nextFrame.TryGetValue(jointIndex, out var tempNextAnimTransform))
                         {
                             nextAnimTransform = tempNextAnimTransform;
@@ -123,18 +134,6 @@ public class Animator
                     joints[jointIndex].ApplyTransformAnimation(tempAnimTransform);
                 }
             }
-        }
-
-        _timer += deltaTimer;
-
-        // 3. Atualiza world matrices (hierarquia correta)
-        foreach (var root in joints.Where(j => !j.HasParent))
-            root.UpdateWorld(Matrix.Identity);
-
-        // 4. Calcula skin matrices finais
-        for (int jointIndex = 0; jointIndex < joints.Length; jointIndex++)
-        {
-            _skeleton.SkinMatrices[jointIndex] = joints[jointIndex].InverseBindPose * joints[jointIndex].WorldMatrix;
         }
     }
 
