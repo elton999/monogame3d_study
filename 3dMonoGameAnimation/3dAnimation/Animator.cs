@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Microsoft.Xna.Framework;
 
 namespace _3dAnimation;
@@ -51,14 +52,76 @@ public class Animator
             joint.ResetToBindPose();
 
         // 2. Aplica animação LOCAL (sem world ainda)
-        var frame = clip.JoinByFrameTransform[_currentFrame];
+        var currentFrame = clip.JoinByFrameTransform[_currentFrame];
 
-        if (frame != null)
+        if (currentFrame != null)
         {
             for (int jointIndex = 0; jointIndex < joints.Length; jointIndex++)
             {
-                if (frame.TryGetValue(jointIndex, out var animTransform))
-                    joints[jointIndex].ApplyTransformAnimation(animTransform);
+                if (currentFrame.TryGetValue(jointIndex, out var animTransform))
+                {
+                    float interpolationValue = InterpolationAnimation.GetInterpolationValue(clip, _currentFrame, _timer);
+                    float intervalDuration = InterpolationAnimation.GetIntervalDuration(clip, _currentFrame);
+                    Console.WriteLine(interpolationValue);
+
+                    var nextAnimTransform = animTransform;
+                    var tempAnimTransform = animTransform.GetCopy();
+
+                    if (clip.JoinByFrameTransform.Length -1 > _currentFrame + 1)
+                    {
+                        var nextFrame = clip.JoinByFrameTransform[_currentFrame+1];
+                        if (nextFrame != null && nextFrame.TryGetValue(jointIndex, out var tempNextAnimTransform))
+                        {
+                            nextAnimTransform = tempNextAnimTransform;
+                        }
+                    }
+
+                    nextAnimTransform = nextAnimTransform.GetCopy();
+
+                    if (tempAnimTransform.HasTranslation && tempAnimTransform.Translation.Interpolation is InterpolationType.LINEAR)
+                    {
+                        var currentValue = tempAnimTransform.Translation.GetVector3();
+                        var nextValue = nextAnimTransform.Translation.GetVector3();
+                        tempAnimTransform.Translation.mValue = InterpolationAnimation.GetLerp(currentValue, nextValue, interpolationValue);
+                    }
+
+                    if (tempAnimTransform.HasScalar && tempAnimTransform.Scalar.Interpolation is InterpolationType.LINEAR)
+                    {
+                        var currentValue = tempAnimTransform.Scalar.GetVector3();
+                        var nextValue = nextAnimTransform.Scalar.GetVector3();
+                        tempAnimTransform.Scalar.mValue = InterpolationAnimation.GetLerp(currentValue, nextValue, interpolationValue);
+                    }
+
+                    if (tempAnimTransform.HasRotation && tempAnimTransform.Rotation.Interpolation is InterpolationType.LINEAR)
+                    {
+                        var currentValue = tempAnimTransform.Rotation.GetQuaternion();
+                        var nextValue = nextAnimTransform.Rotation.GetQuaternion();
+                        tempAnimTransform.Rotation.mValue = InterpolationAnimation.GetLerp(currentValue, nextValue, interpolationValue);
+                    }
+
+                    if (tempAnimTransform.HasTranslation && tempAnimTransform.Translation.Interpolation is InterpolationType.CUBICSPLINE)
+                    {
+                        var currentValue = tempAnimTransform.Translation;
+                        var nextValue = nextAnimTransform.Translation;
+                        tempAnimTransform.Translation.mValue = InterpolationAnimation.GetCubicSpline(currentValue, nextValue, interpolationValue, intervalDuration);
+                    }
+
+                    if (tempAnimTransform.HasScalar && tempAnimTransform.Scalar.Interpolation is InterpolationType.CUBICSPLINE)
+                    {
+                        var currentValue = tempAnimTransform.Scalar;
+                        var nextValue = nextAnimTransform.Scalar;
+                        tempAnimTransform.Scalar.mValue = InterpolationAnimation.GetCubicSpline(currentValue, nextValue, interpolationValue, intervalDuration);
+                    }
+
+                    if (tempAnimTransform.HasRotation && tempAnimTransform.Rotation.Interpolation is InterpolationType.CUBICSPLINE)
+                    {
+                        var currentValue = tempAnimTransform.Rotation;
+                        var nextValue = nextAnimTransform.Rotation;
+                        tempAnimTransform.Rotation.mValue = InterpolationAnimation.GetCubicSpline(currentValue, nextValue, interpolationValue, intervalDuration);
+                    }
+
+                    joints[jointIndex].ApplyTransformAnimation(tempAnimTransform);
+                }
             }
         }
 
