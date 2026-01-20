@@ -40,7 +40,7 @@ namespace _3dAnimation
             _model.Projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(45), 800f / 480f, 0.01f, 1000f);
 
             _animator = new Animator(_mesh.Skeleton);
-            //_animator.PlayAnimation("Walking");
+            _animator.PlayAnimation("Walking");
         }
 
         protected override void Update(GameTime gameTime)
