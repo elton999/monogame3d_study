@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using System;
+using UmbrellaToolsKit.Animation3D;
+using Model = UmbrellaToolsKit.Animation3D.Model;
 
 namespace _3dAnimation
 {
@@ -32,21 +33,21 @@ namespace _3dAnimation
             _mesh = new Mesh(@"Content/Woman.gltf");
             _model = new Model(_graphics.GraphicsDevice, _mesh, effect);
             _model.SetTexture(texture);
-            _model.SetDebugState(Model.Debug.RENDER_JOINTS_AND_MESH);
+            _model.SetDebugState(Model.Debug.NONE);
 
             _model.World = Matrix.CreateTranslation(0, 0, 0) * Matrix.CreateScale(0.01f);
             _model.View = Matrix.CreateLookAt(new Vector3(0, 4, 10), new Vector3(0, 3, 0), new Vector3(0, 1, 0));
-            _model.Projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(45), 800f / 480f, 0.01f, 100f);
-
+            _model.Projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(45), 800f / 480f, 0.01f, 1000f);
 
             _animator = new Animator(_mesh.Skeleton);
-            _animator.PlayAnimation("Walking");
+            //_animator.PlayAnimation("Walking");
         }
 
         protected override void Update(GameTime gameTime)
         {
             float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
             _animator.Update(deltaTime);
+            _model.World *= Matrix.CreateRotationY(0.01f);
             base.Update(gameTime);
         }
 
