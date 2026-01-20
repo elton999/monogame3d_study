@@ -1,6 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 
-namespace _3dAnimation;
+namespace UmbrellaToolsKit.Animation3D;
 
 public enum InterpolationType
 {

@@ -2,7 +2,7 @@
 using System.Linq;
 using Matrix4x4 =  System.Numerics.Matrix4x4;
 
-namespace _3dAnimation;
+namespace UmbrellaToolsKit.Animation3D;
 
 public class Transform
 {

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace _3dAnimation;
+namespace UmbrellaToolsKit.Animation3D;
 
 public class AnimationClip
 {

@@ -1,7 +1,8 @@
 ﻿using Microsoft.Xna.Framework;
 using System.Collections.Generic;
 
-namespace _3dAnimation;
+namespace UmbrellaToolsKit.Animation3D;
+
 public class Joint
 {
     private Joint _parent;

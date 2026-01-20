@@ -2,7 +2,7 @@
 using Microsoft.Xna.Framework.Graphics;
 using System.Runtime.InteropServices;
 
-namespace _3dAnimation;
+namespace UmbrellaToolsKit.Animation3D;
 
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public struct ModelVertexType : IVertexType

@@ -2,75 +2,74 @@
 using System.Linq;
 using Microsoft.Xna.Framework;
 
-namespace _3dAnimation
+namespace UmbrellaToolsKit.Animation3D;
+
+public class Skeleton : IFormattable
 {
-    public class Skeleton : IFormattable
+    private Joint[] _joints = Array.Empty<Joint>();
+    private AnimationClip[] _animationClips = Array.Empty<AnimationClip>();
+
+    public Joint[] Joints => _joints;
+    public Matrix[] SkinMatrices;
+    public AnimationClip[] AnimationClips => _animationClips;
+    public Matrix[] InverseBindMatrix;
+
+    public Skeleton() { }
+
+    public Skeleton(Joint[] joints)
     {
-        private Joint[] _joints = Array.Empty<Joint>();
-        private AnimationClip[] _animationClips = Array.Empty<AnimationClip>();
+        _joints = joints;
+        SkinMatrices = new Matrix[joints.Length];
+    }
 
-        public Joint[] Joints => _joints;
-        public Matrix[] SkinMatrices;
-        public AnimationClip[] AnimationClips => _animationClips;
-        public Matrix[] InverseBindMatrix;
-
-        public Skeleton() { }
-
-        public Skeleton(Joint[] joints)
+    public void ComputeBindPose()
+    {
+        for (int jointIndex = 0;  jointIndex < _joints.Length; jointIndex++)
         {
-            _joints = joints;
-            SkinMatrices = new Matrix[joints.Length];
+           var joint = _joints[jointIndex];
+           joint.BindPose = Matrix.Invert(InverseBindMatrix[jointIndex]);
+           joint.InverseBindPose = InverseBindMatrix[jointIndex];
         }
+    }
 
-        public void ComputeBindPose()
+    public void AddAnimationClip(AnimationClip animationClip)
+    {
+        var list = _animationClips.ToList();
+        list.Add(animationClip);
+        _animationClips = list.ToArray();
+    }
+
+
+    private void SetString(Joint root, string prefix, ref string result)
+    {
+        foreach (Joint joint in root.Children)
         {
-            for (int jointIndex = 0;  jointIndex < _joints.Length; jointIndex++)
-            {
-               var joint = _joints[jointIndex];
-               joint.BindPose = Matrix.Invert(InverseBindMatrix[jointIndex]);
-               joint.InverseBindPose = InverseBindMatrix[jointIndex];
-            }
+            result += $"{prefix}{joint.Name} {joint.WorldMatrix.Translation}\n";
+            SetString(joint, prefix + "-", ref result);
         }
+    }
 
-        public void AddAnimationClip(AnimationClip animationClip)
-        {
-            var list = _animationClips.ToList();
-            list.Add(animationClip);
-            _animationClips = list.ToArray();
-        }
+    public Vector3 GetJointPosition(Joint joint, Matrix worldScale)
+    {
+        Vector3 pos = Vector3.Transform(Vector3.Zero, joint.WorldMatrix);
+        return Vector3.Transform(pos, worldScale);
+    }
 
+    public override string ToString()
+    {
+        var roots = _joints.Where(x => !x.HasParent).ToList();
 
-        private void SetString(Joint root, string prefix, ref string result)
-        {
-            foreach (Joint joint in root.Children)
-            {
-                result += $"{prefix}{joint.Name} {joint.WorldMatrix.Translation}\n";
-                SetString(joint, prefix + "-", ref result);
-            }
-        }
+        if (roots.Count == 0)
+            return "no joints";
 
-        public Vector3 GetJointPosition(Joint joint, Matrix worldScale)
-        {
-            Vector3 pos = Vector3.Transform(Vector3.Zero, joint.WorldMatrix);
-            return Vector3.Transform(pos, worldScale);
-        }
+        var root = roots[0];
+        string result = $"{root.Name} {root.WorldMatrix.Translation}\n";
+        SetString(root, "-", ref result);
+        return result;
+    }
 
-        public override string ToString()
-        {
-            var roots = _joints.Where(x => !x.HasParent).ToList();
-
-            if (roots.Count == 0)
-                return "no joints";
-
-            var root = roots[0];
-            string result = $"{root.Name} {root.WorldMatrix.Translation}\n";
-            SetString(root, "-", ref result);
-            return result;
-        }
-
-        public string ToString(string format, IFormatProvider formatProvider)
-        {
-            return ToString();
-        }
+    public string ToString(string format, IFormatProvider formatProvider)
+    {
+        return ToString();
     }
 }

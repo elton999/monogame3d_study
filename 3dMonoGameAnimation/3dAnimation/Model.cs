@@ -1,6 +1,8 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-namespace _3dAnimation;
+
+namespace UmbrellaToolsKit.Animation3D;
+
 public class Model
 {
     public enum Debug
