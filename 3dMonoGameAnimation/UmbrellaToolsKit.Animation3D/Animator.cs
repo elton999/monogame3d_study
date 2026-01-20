@@ -41,7 +41,7 @@ public class Animator
             var joints = _skeleton.Joints;
             var animationClips = _skeleton.AnimationClips;
             var clip = animationClips.FirstOrDefault(c => c.Name == _animationName);
-            if (clip == null || clip.JoinByFrameTransform == null)
+            if (clip != null && clip.JoinByFrameTransform != null)
             {
                 UpdateLoop(clip);
                 ApplyAnimationPose(joints, clip);
@@ -53,7 +53,6 @@ public class Animator
         foreach (var root in _skeleton.Joints.Where(j => !j.HasParent))
             root.UpdateWorld(Matrix.Identity);
 
-        //Calcula skin matrices finais
         for (int jointIndex = 0; jointIndex < _skeleton.Joints.Length; jointIndex++)
         {
             var joint = _skeleton.Joints[jointIndex];
@@ -73,7 +72,6 @@ public class Animator
                 {
                     float interpolationValue = InterpolationAnimation.GetInterpolationValue(clip, _currentFrame, _timer);
                     float intervalDuration = InterpolationAnimation.GetIntervalDuration(clip, _currentFrame);
-                    Console.WriteLine(interpolationValue);
 
                     var nextAnimTransform = animTransform;
                     var tempAnimTransform = animTransform.GetCopy();
