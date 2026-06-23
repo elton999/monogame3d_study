@@ -19,6 +19,7 @@ public class Animator
     private Skeleton _skeleton;
     private LoopMode _currentLoopMode;
 
+    public float Speed = 1.0f;
     public Animator(Skeleton skeleton) => _skeleton = skeleton;
 
     public void PlayAnimation(string animationName, LoopMode loopMode = LoopMode.REPEAT)
@@ -30,6 +31,7 @@ public class Animator
 
     public void Update(float deltaTimer)
     {
+        deltaTimer = deltaTimer * Speed;
         foreach (var joint in _skeleton.Joints)
             joint.ResetToBindPose();
 
@@ -44,7 +46,7 @@ public class Animator
             if (clip != null && clip.JoinByFrameTransform != null)
             {
                 UpdateLoop(clip);
-                ApplyAnimationPose(joints, clip);
+                ApplyAnimationPose(joints, clip, deltaTimer);
             }
         }
 
@@ -60,7 +62,7 @@ public class Animator
         }
     }
 
-    private void ApplyAnimationPose(Joint[] joints, AnimationClip clip)
+    private void ApplyAnimationPose(Joint[] joints, AnimationClip clip, float deltaTimer)
     {
         var currentFrame = clip.JoinByFrameTransform[_currentFrame];
 
@@ -143,12 +145,24 @@ public class Animator
 
     private void UpdateLoop(AnimationClip clip)
     {
-        if (_timer > clip.FramesTimer[_currentFrame])
+        var nextFrame = clip.FramesTimer[_currentFrame];
+        if (_currentFrame < clip.FramesTimer.Length -1)
+        {
+            nextFrame = clip.FramesTimer[_currentFrame + 1];
+        }
+        else if (_currentLoopMode is LoopMode.REPEAT)
+        {
+            nextFrame = clip.FramesTimer[0];
+        }
+
+        if (_timer >= nextFrame)
         {
             bool isLastFrame = clip.FramesTimer.Length - 1 == _currentFrame;
-            
-            if(_currentLoopMode is LoopMode.REPEAT || _currentLoopMode is LoopMode.ONCE && !isLastFrame)
+
+            if (_currentLoopMode is LoopMode.REPEAT || _currentLoopMode is LoopMode.ONCE && !isLastFrame)
+            {
                 _currentFrame++;
+            }
         }
 
         if (_currentFrame < clip.JoinByFrameTransform.Length) return;

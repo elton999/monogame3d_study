@@ -41,6 +41,7 @@ namespace _3dAnimation
 
             _animator = new Animator(_mesh.Skeleton);
             _animator.PlayAnimation("Walking");
+            _model.SetDebugState(Model.Debug.RENDER_JOINTS_AND_MESH);
         }
 
         protected override void Update(GameTime gameTime)

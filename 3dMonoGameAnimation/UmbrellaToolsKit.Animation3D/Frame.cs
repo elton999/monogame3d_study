@@ -4,10 +4,10 @@ namespace UmbrellaToolsKit.Animation3D;
 
 public enum InterpolationType
 {
-    LINEAR,
-    STEP,
-    CATMULLROMSPLINE,
-    CUBICSPLINE
+    LINEAR = 0,
+    STEP = 1,
+    CATMULLROMSPLINE = 2,
+    CUBICSPLINE = 3
 }
 
 public class Frame

@@ -16,7 +16,7 @@ public class Mesh
     private Vector3[] _normals;
     private Vector3[] _meshVertices;
     private Matrix[] _inverseBindMatrix;
-    private int[] _jointsIndexs;
+    private int[] _jointIndices;
 
     private Skeleton _skeleton;
     private Gltf _gltf;
@@ -70,7 +70,6 @@ public class Mesh
                 //Joints 
                 if (primitives[meshesIndex].Attributes.ContainsKey("JOINTS_0") && primitives[meshesIndex].Attributes["JOINTS_0"] == accessorIndex && accessor.Type == Accessor.TypeEnum.VEC4)
                 {
-                    var listJoints = _gltf.Skins[0].Joints;
                     for (int n = bufferView.ByteOffset; n < bufferView.ByteOffset + bufferView.ByteLength; n++)
                     {
                         int x = uriBytes[n];
@@ -109,7 +108,7 @@ public class Mesh
                 }
 
                 //Texture Coords
-                if (primitives[meshesIndex].Attributes.ContainsKey("NORMAL") && primitives[meshesIndex].Attributes.ContainsKey("TEXCOORD_0") && primitives[meshesIndex].Attributes["TEXCOORD_0"] == accessorIndex && accessor.Type == Accessor.TypeEnum.VEC2)
+                if (primitives[meshesIndex].Attributes.ContainsKey("TEXCOORD_0") && primitives[meshesIndex].Attributes["TEXCOORD_0"] == accessorIndex && accessor.Type == Accessor.TypeEnum.VEC2)
                 {
                     for (int n = bufferView.ByteOffset; n < bufferView.ByteOffset + bufferView.ByteLength; n += 4)
                     {
@@ -126,8 +125,8 @@ public class Mesh
                 {
                     for (int n = bufferView.ByteOffset; n < bufferView.ByteOffset + bufferView.ByteLength; n += 2)
                     {
-                        short TriangleItem = BitConverter.ToInt16(uriBytes, n);
-                        indices.Add((short)TriangleItem);
+                        ushort triangleItem = BitConverter.ToUInt16(uriBytes, n);
+                        indices.Add((short)triangleItem);
                     }
                 }
             }
@@ -173,7 +172,7 @@ public class Mesh
         }
 
         _inverseBindMatrix = inverseBind;
-        _jointsIndexs = _gltf.Skins[0].Joints;
+        _jointIndices = _gltf.Skins[0].Joints;
     }
 
     private void LoadAnimations()

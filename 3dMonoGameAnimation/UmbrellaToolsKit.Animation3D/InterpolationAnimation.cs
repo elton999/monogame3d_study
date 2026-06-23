@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
+using System;
 
 namespace UmbrellaToolsKit.Animation3D;
 
@@ -19,6 +20,7 @@ public class InterpolationAnimation
     {
         // Evita erro se for o último frame
         if (frame >= animationClip.FramesTimer.Length - 1) return 0f;
+
         float timeA = animationClip.FramesTimer[frame];
         float timeB = animationClip.FramesTimer[frame + 1];
 
@@ -50,9 +52,9 @@ public class InterpolationAnimation
         float t2 = interpoaltionValue * interpoaltionValue;
         float t3 = t2 * interpoaltionValue;
 
-        float h00 = 2 * t3 - 3 * t2 + 1;
-        float h10 = t3 - 2 * t2 + interpoaltionValue;
-        float h01 = -2 * t3 + 3 * t2;
+        float h00 = 2.0f * t3 - 3.0f * t2 + 1.0f;
+        float h10 = t3 - 2.0f * t2 + interpoaltionValue;
+        float h01 = -2.0f * t3 + 3.0f * t2;
         float h11 = t3 - t2;
 
          var result = h00 * p0 + h10 * m0 + h01 * p1 + h11 * m1;
@@ -73,9 +75,9 @@ public class InterpolationAnimation
         float t2 = t * t;
         float t3 = t2 * t;
 
-        float h00 = 2 * t3 - 3 * t2 + 1;
-        float h10 = t3 - 2 * t2 + t;
-        float h01 = -2 * t3 + 3 * t2;
+        float h00 = 2.0f * t3 - 3.0f * t2 + 1.0f;
+        float h10 = t3 - 2.0f * t2 + t;
+        float h01 = -2.0f * t3 + 3.0f * t2;
         float h11 = t3 - t2;
 
         Vector4 resultVector = h00 * p0 + h10 * m0 + h01 * p1 + h11 * m1;
